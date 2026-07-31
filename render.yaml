@@ -1,0 +1,40 @@
+# Render blueprint for the AI Super App backend.
+# The database runs on Neon PostgreSQL - set DATABASE_URL (and other
+# secrets) in the Render dashboard; they are listed below with `sync: false`.
+#
+# The frontend is deployed separately on Vercel with NEXT_PUBLIC_API_URL
+# pointing at this service (e.g. https://ai-super-app-backend.onrender.com/api/v1).
+
+services:
+  - type: web
+    name: ai-super-app-backend
+    runtime: python
+    rootDir: backend
+    plan: starter
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
+    startCommand: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+    healthCheckPath: /health
+    autoDeploy: true
+
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.6"
+      - key: DEBUG
+        value: "false"
+      # Set these in the Render dashboard (never commit secrets):
+      - key: DATABASE_URL
+        sync: false
+      - key: SECRET_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false

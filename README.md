@@ -253,18 +253,24 @@ DATABASE_URL=sqlite+aiosqlite:///./super_app.db
 SECRET_KEY=your-random-secret-key
 ```
 
-### Docker Setup
+### Deploy with Buildpacks (Northflank)
 
-```bash
-# Build and run all services
-docker-compose up --build
+The backend is deployed as a standard Python buildpack service — Docker is
+not required.
 
-# Run in background
-docker-compose up -d
-
-# Stop all services
-docker-compose down
-```
+1. Create a new service in Northflank from this repository.
+2. Set **Build type** to **Buildpack** and **Build context** to `backend`.
+3. Use a buildpack stack that supports the included `Aptfile`
+   (e.g. `paketobuildpacks/builder-jammy-full:latest`, or the Heroku Python
+   buildpack with the `heroku-community/apt` buildpack added). The `Aptfile`
+   installs the runtime system packages: `tesseract-ocr` (OCR) and `ffmpeg`
+   (speech-to-text audio decoding).
+4. The start command is read from the `Procfile`:
+   `uvicorn app.main:app --host 0.0.0.0 --port $PORT`.
+5. Set the required environment variables listed in the
+   [Environment Variables](#environment-variables) section. `PORT` is provided
+   automatically by Northflank.
+6. Health check: `GET /health`.
 
 ---
 
@@ -302,8 +308,16 @@ super-app/
 │   │   ├── auth/            # OAuth handlers
 │   │   ├── utils/           # Helper functions
 │   │   └── main.py          # FastAPI application
+│   ├── docker/             # Docker files (local development only)
+│   │   ├── Dockerfile.backend
+│   │   ├── Dockerfile.frontend
+│   │   ├── Dockerfile.nginx
+│   │   ├── nginx.conf
+│   │   └── nginx-default.conf
 │   ├── alembic/             # Database migrations
 │   ├── uploads/             # File upload directory
+│   ├── Aptfile              # System packages for buildpacks (tesseract, ffmpeg)
+│   ├── Procfile             # Buildpack start command (uvicorn --port $PORT)
 │   └── requirements.txt
 ├── frontend/
 │   ├── src/
@@ -333,13 +347,7 @@ super-app/
 │   │   └── styles/          # Global styles
 │   ├── package.json
 │   └── next.config.js
-├── docker/
-│   ├── Dockerfile.backend
-│   ├── Dockerfile.frontend
-│   ├── Dockerfile.nginx
-│   ├── nginx.conf
-│   └── nginx-default.conf
-├── docker-compose.yml
+├── docker-compose.yml       # Local development only
 ├── .env.example
 └── README.md
 ```
@@ -451,24 +459,30 @@ The API is available at `http://localhost:8000/docs` (Swagger UI) or `http://loc
 
 ## 🚢 Deployment
 
-### Docker (Recommended)
+### Buildpack (Northflank)
+
+The backend deploys as a standard Python buildpack service — Docker is not
+required for deployment.
 
 ```bash
-docker-compose up -d --build
-```
+# Northflank settings
+#   Build type:   Buildpack
+#   Build context: backend
+#   Stack:        paketobuildpacks/builder-jammy-full:latest
+#                 (or Heroku Python buildpack + heroku-community/apt)
 
-### Manual Deployment
+# Aptfile installs the runtime system packages (tesseract-ocr, ffmpeg)
+# Procfile provides the production start command:
+#   web: uvicorn app.main:app --host 0.0.0.0 --port $PORT
 
-```bash
-# Backend
+# Local equivalent of the production start command
 cd backend
-gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker -b 0.0.0.0:8000
-
-# Frontend
-cd frontend
-npm run build
-npm start
+pip install -r requirements.txt
+uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
+
+Set the required environment variables (see [Environment Variables](#environment-variables)
+above) in the Northflank service. `PORT` is set automatically by the platform.
 
 ### Production Checklist
 

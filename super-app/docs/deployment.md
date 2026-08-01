@@ -7,6 +7,13 @@ Target architecture:
 - **Database**: PostgreSQL on **Neon** (async driver `asyncpg`)
 - **AI providers**: Groq and/or OpenAI (existing integration, unchanged)
 
+> **Northflank (buildpack) alternative:** The backend is also fully deployable
+> on Northflank using standard Python buildpacks — no Docker required. See the
+> README "Deploy with Buildpacks (Northflank)" section. Set the build context to
+> `backend`, use a stack that supports `Aptfile` (e.g.
+> `paketobuildpacks/builder-jammy-full:latest`), and let the `Procfile` provide
+> the start command (`uvicorn app.main:app --host 0.0.0.0 --port $PORT`).
+
 ## 1. Database (Neon)
 
 1. Create a Postgres database in the Neon dashboard.

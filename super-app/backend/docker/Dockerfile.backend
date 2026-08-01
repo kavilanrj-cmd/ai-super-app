@@ -6,8 +6,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     tesseract-ocr \
     tesseract-ocr-eng \
     ffmpeg \
-    libsm6 \
-    libxext6 \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .

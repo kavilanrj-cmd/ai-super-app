@@ -533,12 +533,6 @@ npm run lint
 
 ---
 
-## 📄 License
-
-MIT License - see LICENSE file for details.
-
----
-
 ## 🙏 Acknowledgments
 
 - [CrewAI](https://crewai.com) for the multi-agent framework

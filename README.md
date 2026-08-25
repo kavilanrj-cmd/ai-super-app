@@ -548,8 +548,4 @@ MIT License - see LICENSE file for details.
 - [Groq](https://groq.com) for high-speed inference
 - [ChromaDB](https://www.trychroma.com) for vector storage
 
----
-
-<div align="center">
-  <strong>Built with ❤️ using Python, Next.js, CrewAI, and LangChain</strong>
-</div>
+--

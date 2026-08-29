@@ -210,31 +210,76 @@ The platform features **11 specialized AI agents** powered by CrewAI and LangCha
 - npm or yarn
 - Git
 
-### Quick Start
+### Quick Start (Step-by-Step)
 
-```bash
-# Clone the repository
-git clone <repository-url>
-cd super-app
+The app has two parts, each run in its own terminal: the **backend** (FastAPI
++ Python) and the **frontend** (Next.js). **Start the backend first.**
 
-# Backend Setup
-cd backend
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+#### Backend — Terminal 1 (PowerShell)
+
+```powershell
+# 1. Navigate to the backend
+cd "super-app/backend"
+
+# 2. Activate the Python environment
+venv\Scripts\Activate.ps1
+
+# 3. Install dependencies (first time only)
 pip install -r requirements.txt
 
-# Set up environment
-cp ../.env.example .env
-# Edit .env with your API keys
+# 4. Create the env config file (first time only)
+Copy-Item ../.env.example .env
+```
 
-# Run the backend
-uvicorn app.main:app --reload --port 8000
+Open `.env` and set at least:
 
-# Frontend Setup (in another terminal)
-cd ../frontend
+```env
+DEBUG=True
+DATABASE_URL=sqlite+aiosqlite:///./super_app.db   # SQLite for quick local start
+SECRET_KEY=<a-long-random-string>
+GROQ_API_KEY=<your-key>    # or OPENAI_API_KEY=sk-...
+```
+
+Then run migrations and start the server:
+
+```powershell
+# 5. Run database migrations
+alembic upgrade head
+
+# 6. Start the backend
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+Backend runs at `http://localhost:8000` (API docs at `http://localhost:8000/docs`).
+It seeds an admin account on first startup using `ADMIN_EMAIL` / `ADMIN_PASSWORD`
+from `.env`.
+
+#### Frontend — Terminal 2 (PowerShell)
+
+```powershell
+# 7. Navigate to the frontend
+cd "super-app/frontend"
+
+# 8. Install frontend dependencies (first time only)
 npm install
+
+# 9. Start the frontend dev server
 npm run dev
 ```
+
+Frontend runs at `http://localhost:3000`. Its `.env.local` already points the API
+at `http://localhost:8000/api/v1`. If that port is taken, run:
+
+```powershell
+npm run dev -- -p 3001
+```
+
+#### Use the app
+
+Open `http://localhost:3000` and log in with the seeded admin
+(`ADMIN_EMAIL` / `ADMIN_PASSWORD` from your `.env`).
+
+> **Tip:** Keep Terminal 1 (backend) running while Terminal 2 (frontend) is running.
 
 ### Environment Variables
 

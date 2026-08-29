@@ -12,6 +12,16 @@ __pycache__/
 venv/
 *.db
 
+# Logs / runtime
+*.log
+*_err.log
+*_out.log
+*.pid
+backend_err.log
+backend_out.log
+frontend_err.log
+frontend_out.log
+
 # Node
 node_modules/
 .next/

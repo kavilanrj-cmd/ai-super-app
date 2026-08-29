@@ -1,0 +1,10 @@
+# Runtime / generated
+venv/
+*.log
+*.log.err
+*.pid
+backend_err.log
+backend_out.log
+frontend_err.log
+frontend_out.log
+package-lock.json

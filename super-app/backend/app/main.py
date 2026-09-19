@@ -20,6 +20,9 @@ import os
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Startup diagnostics (never print the actual API key).
+    print(f"GROQ_API_KEY configured: {settings.groq_api_key_configured}")
+    print(f"GROQ_MODEL: {settings.GROQ_MODEL}")
     await init_db()
     await seed_admin()
     os.makedirs(settings.UPLOAD_DIR, exist_ok=True)

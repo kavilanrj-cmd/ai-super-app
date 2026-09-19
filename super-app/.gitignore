@@ -32,7 +32,7 @@ npm-debug.log*
 .idea/
 
 # Uploads
-uploads/*
+uploads/
 !uploads/.gitkeep
 
 # OS

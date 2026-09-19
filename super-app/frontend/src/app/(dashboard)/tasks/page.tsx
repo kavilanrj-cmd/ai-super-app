@@ -101,8 +101,8 @@ export default function TasksPage() {
                 <Sparkles className="w-4 h-4 text-fuchsia-400" />
               </div>
               <div>
-                <h3 className="text-sm font-semibold text-gray-200">Generate Tasks from Goal</h3>
-                <p className="text-xs text-gray-500">Let AI break down your goal into actionable tasks</p>
+                <h3 className="text-base font-semibold text-gray-100">Generate Tasks from Goal</h3>
+                <p className="text-sm text-gray-500">Let AI break down your goal into actionable tasks</p>
               </div>
             </div>
             <form onSubmit={(e) => { e.preventDefault(); generateFromGoal(); }} className="flex gap-3">
@@ -134,21 +134,21 @@ export default function TasksPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.08 + i * 0.06, duration: 0.5 }}
-              className="glass-card p-4 sm:p-5 space-y-3 group hover:-translate-y-1"
+              className="glass-card p-5 sm:p-6 space-y-4 group hover:-translate-y-1"
             >
               <div className="flex items-center justify-between">
-                <div className={cn('w-10 h-10 rounded-xl bg-gradient-to-br flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform', stat.color)}>
-                  <stat.icon className="w-5 h-5 text-white" />
+                <div className={cn('w-12 h-12 rounded-xl bg-gradient-to-br flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform', stat.color)}>
+                  <stat.icon className="w-6 h-6 text-white" />
                 </div>
-                <span className="text-[10px] font-medium text-gray-500 flex items-center gap-1">
-                  <Activity className="w-3 h-3" /> Live
+                <span className="text-xs font-medium text-gray-400 flex items-center gap-1.5">
+                  <Activity className="w-3.5 h-3.5" /> Live
                 </span>
               </div>
               <div>
-                <p className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
+                <p className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
                   <AnimatedNumber value={stat.value} format={(n) => `${n}${stat.suffix || ''}`} />
                 </p>
-                <p className="text-xs sm:text-sm text-gray-500 mt-0.5">{stat.label}</p>
+                <p className="text-sm sm:text-base text-gray-400 mt-1">{stat.label}</p>
               </div>
             </motion.div>
           ))
@@ -184,12 +184,12 @@ export default function TasksPage() {
             transition={{ delay: 0.3, duration: 0.5 }}
           >
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+              <h2 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2.5">
                 <ListTodo className="w-5 h-5 text-primary-400" />
                 Your Tasks
               </h2>
               {tasks.length > 0 && (
-                <span className="px-3 py-1 text-xs rounded-full bg-primary-500/10 text-primary-300 border border-primary-500/20">
+                <span className="px-3 py-1 text-sm rounded-full bg-primary-500/10 text-primary-300 border border-primary-500/20">
                   {tasks.length} total
                 </span>
               )}
@@ -227,22 +227,22 @@ export default function TasksPage() {
                       aria-label={task.status === 'done' ? 'Mark as incomplete' : 'Mark as complete'}
                     >
                       {task.status === 'done' ? (
-                        <CheckCircle2 className="w-6 h-6 text-emerald-400" />
+                        <CheckCircle2 className="w-7 h-7 text-emerald-400" />
                       ) : (
-                        <Circle className="w-6 h-6 group-hover:text-primary-400" />
+                        <Circle className="w-7 h-7 group-hover:text-primary-400" />
                       )}
                     </button>
                     <div className="flex-1 min-w-0">
-                      <p className={cn('text-gray-200 font-medium', task.status === 'done' && 'line-through text-gray-500')}>
+                      <p className={cn('text-[15px] text-gray-100 font-medium', task.status === 'done' && 'line-through text-gray-500')}>
                         {task.title}
                       </p>
                       {task.due_date && (
-                        <p className="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
-                          <Clock className="w-3 h-3" /> Due: {task.due_date}
+                        <p className="text-sm text-gray-500 mt-0.5 flex items-center gap-1">
+                          <Clock className="w-3.5 h-3.5" /> Due: {task.due_date}
                         </p>
                       )}
                     </div>
-                    <span className={cn('px-3 py-1 text-xs rounded-full border shrink-0', priorityStyles[task.priority] || 'bg-white/5 text-gray-400 border-white/10')}>
+                    <span className={cn('px-3 py-1 text-sm rounded-full border shrink-0', priorityStyles[task.priority] || 'bg-white/5 text-gray-400 border-white/10')}>
                       {task.priority}
                     </span>
                   </motion.div>
@@ -259,7 +259,7 @@ export default function TasksPage() {
           transition={{ delay: 0.35, duration: 0.5 }}
           className="space-y-4"
         >
-          <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+          <h2 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2.5">
             <Activity className="w-5 h-5 text-primary-400" />
             Progress
           </h2>
@@ -273,11 +273,11 @@ export default function TasksPage() {
             />
             <div className="space-y-2.5">
               <div>
-                <div className="flex justify-between text-xs text-gray-400 mb-1">
+                <div className="flex justify-between text-sm text-gray-400 mb-1.5">
                   <span>Completed</span>
                   <span className="text-white font-medium">{doneCount} / {tasks.length}</span>
                 </div>
-                <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                <div className="h-2 bg-white/5 rounded-full overflow-hidden">
                   <motion.div
                     className="h-full rounded-full bg-gradient-to-r from-primary-500 via-violet-500 to-fuchsia-500"
                     initial={{ width: 0 }}
@@ -286,14 +286,14 @@ export default function TasksPage() {
                   />
                 </div>
               </div>
-              <div className="pt-2 grid grid-cols-2 gap-2">
-                <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
-                  <p className="text-lg font-bold text-white"><AnimatedNumber value={pendingCount} /></p>
-                  <p className="text-[10px] text-gray-500">Pending</p>
+              <div className="pt-3 grid grid-cols-2 gap-2.5">
+                <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+                  <p className="text-xl font-bold text-white"><AnimatedNumber value={pendingCount} /></p>
+                  <p className="text-xs text-gray-500 mt-0.5">Pending</p>
                 </div>
-                <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
-                  <p className="text-lg font-bold text-white"><AnimatedNumber value={doneCount} /></p>
-                  <p className="text-[10px] text-gray-500">Done</p>
+                <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+                  <p className="text-xl font-bold text-white"><AnimatedNumber value={doneCount} /></p>
+                  <p className="text-xs text-gray-500 mt-0.5">Done</p>
                 </div>
               </div>
             </div>

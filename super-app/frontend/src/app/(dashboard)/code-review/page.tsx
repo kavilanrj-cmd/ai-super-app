@@ -7,6 +7,7 @@ import { aiAPI } from '@/lib/api';
 import { Code, Check, Copy, Shield, Zap, Sparkles, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { PageHeader } from '@/components/ui';
+import { AIResponse } from '@/components/ai';
 
 const languages = [
   { value: 'python', label: 'Python' },
@@ -138,9 +139,7 @@ export default function CodeReviewPage() {
               </Button>
             </CardHeader>
             <CardContent>
-              <div className="bg-black/30 border border-white/[0.06] rounded-xl p-5 font-mono text-sm text-gray-300 whitespace-pre-wrap leading-relaxed max-h-[560px] overflow-y-auto">
-                {review}
-              </div>
+              <AIResponse content={review} disableToolbar />
             </CardContent>
           </Card>
         </motion.div>

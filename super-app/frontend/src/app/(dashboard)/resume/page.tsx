@@ -11,43 +11,73 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { PageHeader, CircularProgress, SkeletonCard } from '@/components/ui';
+import { AIResponse, AICopyButton } from '@/components/ai';
 import { cn } from '@/lib/utils';
+
+/**
+ * Resolve the ATS score the AI actually reported so the top score card and
+ * the AI analysis always agree. Prefers the backend's structured field and
+ * falls back to parsing the analysis text (so a valid score is never lost
+ * to a 0 just because the field name differs).
+ */
+function resolveAtsScore(result: any): number {
+  const fromField = Number(
+    result?.ats_score ?? result?.atsScore ?? result?.overall_score ?? result?.score
+  );
+  if (Number.isFinite(fromField) && fromField > 0) return Math.min(fromField, 100);
+  const match = /(?:ats|overall)\s*score.{0,60}?(\d{1,3})\s*\/\s*100|\bscore\s*[:=]?\s*(\d{1,3})\s*\/\s*100/i.exec(
+    result?.analysis ?? ''
+  );
+  const fromAnalysis = match ? Number(match[1] ?? match[2]) : 0;
+  return Math.min(fromAnalysis, 100);
+}
 
 export default function ResumePage() {
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     if (acceptedFiles.length > 0) {
       setFile(acceptedFiles[0]);
       setResult(null);
+      setError(null);
     }
+  }, []);
+
+  const onDropRejected = useCallback((fileRejections: any[]) => {
+    const msg = fileRejections[0]?.errors?.map((e: any) => e.message).join(', ') || 'Unsupported file type';
+    setError(`Could not use this file: ${msg}`);
   }, []);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    accept: { 'application/pdf': ['.pdf'] },
+    onDropRejected,
+    accept: { 'application/pdf': ['.pdf'], 'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'] },
     maxFiles: 1,
   });
 
   const analyzeResume = async () => {
     if (!file) return;
     setLoading(true);
+    setError(null);
     try {
       const formData = new FormData();
       formData.append('file', file);
       const res = await resumeAPI.analyze(formData);
       setResult(res.data);
       toast.success('Resume analyzed!');
-    } catch (err) {
+    } catch (err: any) {
+      const detail = err?.response?.data?.detail || err?.message || 'Unknown error';
+      setError(typeof detail === 'string' ? detail : JSON.stringify(detail));
       toast.error('Failed to analyze resume');
     } finally {
       setLoading(false);
     }
   };
 
-  const score = Math.min(result?.ats_score || 0, 100);
+  const score = resolveAtsScore(result);
 
   const suggestionCards = [
     { icon: Eye, label: 'Experience', value: result?.experience_years, color: 'text-blue-400 bg-blue-500/10' },
@@ -98,6 +128,7 @@ export default function ResumePage() {
                   : 'border-white/10 hover:border-primary-500/40'
             )}
           >
+            <input {...getInputProps()} />
             <div className="absolute top-0 right-0 w-40 h-40 bg-primary-500/5 rounded-full blur-[70px] group-hover:bg-primary-500/10 transition-colors" />
             <motion.div
               animate={isDragActive ? { scale: 1.1, y: -4 } : { scale: 1, y: 0 }}
@@ -110,15 +141,17 @@ export default function ResumePage() {
               <div className="space-y-2">
                 <FileText className="w-8 h-8 mx-auto text-emerald-400" />
                 <p className="font-medium text-gray-200 break-all">{file.name}</p>
-                <p className="text-sm text-gray-500">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                <p className="text-[15px] text-gray-500">
+                  {(file.size / 1024 / 1024).toFixed(2)} MB · {file.type || 'file'}
+                </p>
                 <span className="inline-flex items-center gap-1.5 text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-3 py-1 mt-2">
                   <FileCheck2 className="w-3 h-3" /> Ready to analyze
                 </span>
               </div>
             ) : (
               <div>
-                <p className="text-lg font-medium text-gray-200 mb-1.5">Drop your resume here</p>
-                <p className="text-sm text-gray-500">or click to browse · Supports PDF</p>
+                <p className="text-xl font-medium text-gray-200 mb-2">Drop your resume here</p>
+                <p className="text-[15px] text-gray-500">or click to browse · Supports PDF & DOCX</p>
               </div>
             )}
           </div>
@@ -145,17 +178,42 @@ export default function ResumePage() {
             </motion.button>
           )}
 
+          {file && (
+            <button
+              type="button"
+              onClick={() => {
+                setFile(null);
+                setResult(null);
+                setError(null);
+              }}
+              className="btn-secondary w-full flex items-center justify-center gap-2 py-2.5 text-sm"
+            >
+              <RefreshCw className="w-4 h-4" /> Remove / change file
+            </button>
+          )}
+
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-300"
+            >
+              <p className="font-medium mb-1">Upload failed</p>
+              <p className="break-words">{error}</p>
+            </motion.div>
+          )}
+
           <div className="grid grid-cols-2 gap-3">
             {suggestionCards.map((c) => (
-              <div key={c.label} className="glass-card !rounded-xl p-4 flex items-center gap-3">
-                <div className={cn('w-9 h-9 rounded-lg flex items-center justify-center shrink-0', c.color)}>
-                  <c.icon className="w-4 h-4" />
+              <div key={c.label} className="glass-card !rounded-xl p-4 sm:p-5 flex items-center gap-3">
+                <div className={cn('w-10 h-10 rounded-lg flex items-center justify-center shrink-0', c.color)}>
+                  <c.icon className="w-5 h-5" />
                 </div>
                 <div className="min-w-0">
-                  <p className="font-semibold text-gray-100 text-lg truncate">
+                  <p className="font-semibold text-gray-100 text-xl truncate">
                     {loading ? '…' : c.value ?? '—'}
                   </p>
-                  <p className="text-[11px] text-gray-500">{c.label}</p>
+                  <p className="text-xs sm:text-sm text-gray-500">{c.label}</p>
                 </div>
               </div>
             ))}
@@ -187,14 +245,14 @@ export default function ResumePage() {
               </div>
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-amber-400" />
-                  <p className="font-medium text-gray-200">Overall Score</p>
+                  <Sparkles className="w-5 h-5 text-amber-400" />
+                  <p className="font-medium text-gray-100 text-base">Overall Score</p>
                 </div>
-                <p className="text-3xl font-bold gradient-text leading-none">
+                <p className="text-4xl font-extrabold gradient-text leading-none">
                   {score.toFixed(0)}
-                  <span className="text-sm text-gray-500 font-normal"> /100</span>
+                  <span className="text-base text-gray-500 font-normal"> /100</span>
                 </p>
-                <p className="text-xs text-gray-500 max-w-[180px]">
+                <p className="text-sm text-gray-500 max-w-[200px] leading-relaxed">
                   {score >= 80 ? 'Excellent! Recruiter-ready.' : score >= 60 ? 'Good, room to improve.' : 'Needs improvement for ATS.'}
                 </p>
               </div>
@@ -208,9 +266,9 @@ export default function ResumePage() {
                 className="glass-card p-6"
               >
                 <div className="flex items-center gap-2 mb-4">
-                  <ListChecks className="w-4.5 h-4.5 text-emerald-400" />
-                  <h3 className="font-semibold text-gray-200">Skills Found</h3>
-                  <span className="ml-auto text-xs text-gray-500">{result.skills_found.length} detected</span>
+                  <ListChecks className="w-5 h-5 text-emerald-400" />
+                  <h3 className="text-lg font-semibold text-gray-100">Skills Found</h3>
+                  <span className="ml-auto text-sm text-gray-500">{result.skills_found.length} detected</span>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {result.skills_found.map((skill: string, i: number) => (
@@ -235,12 +293,11 @@ export default function ResumePage() {
               className="glass-card p-6"
             >
               <div className="flex items-center gap-2 mb-4">
-                <Lightbulb className="w-4.5 h-4.5 text-amber-400" />
-                <h3 className="font-semibold text-gray-200">AI Analysis</h3>
+                <Lightbulb className="w-5 h-5 text-amber-400" />
+                <h3 className="text-lg font-semibold text-gray-100">AI Analysis</h3>
+                <span className="ml-auto"><AICopyButton text={result.analysis} /></span>
               </div>
-              <div className="prose prose-invert prose-sm max-w-none prose-gray">
-                <p className="text-gray-300 whitespace-pre-wrap">{result.analysis}</p>
-              </div>
+              <AIResponse content={result.analysis} disableToolbar />
             </motion.div>
           </motion.div>
         )}

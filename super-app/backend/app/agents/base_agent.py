@@ -1,6 +1,5 @@
 from typing import Optional, List, Dict, Any
 from langchain_groq import ChatGroq
-from langchain_openai import ChatOpenAI
 from app.core.config import settings
 
 class BaseAgent:
@@ -14,10 +13,9 @@ class BaseAgent:
         self.llm = self._get_llm()
 
     def _get_llm(self):
-        if settings.GROQ_API_KEY:
-            return ChatGroq(model="llama-3.3-70b-versatile", temperature=0.7, api_key=settings.GROQ_API_KEY)
-        elif settings.OPENAI_API_KEY:
-            return ChatOpenAI(model="gpt-4o", temperature=0.7, api_key=settings.OPENAI_API_KEY)
+        if settings.groq_api_key_configured:
+            # Model name comes exclusively from settings.GROQ_MODEL (.env).
+            return ChatGroq(model=settings.GROQ_MODEL, temperature=0.7, api_key=settings.GROQ_API_KEY)
         return None
 
     def add_tool(self, tool: Any):

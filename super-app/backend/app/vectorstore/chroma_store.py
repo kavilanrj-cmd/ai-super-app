@@ -1,8 +1,10 @@
 import chromadb
 from chromadb.config import Settings
+from chromadb.errors import NotFoundError
 from sentence_transformers import SentenceTransformer
 from typing import List, Optional
 import os
+import uuid
 
 class VectorStore:
     def __init__(self):
@@ -15,14 +17,14 @@ class VectorStore:
     def get_or_create_collection(self, name: str):
         try:
             return self.client.get_collection(name)
-        except ValueError:
+        except NotFoundError:
             return self.client.create_collection(name)
 
     async def add_documents(self, collection_name: str, documents: List[str], metadatas: Optional[List[dict]] = None, ids: Optional[List[str]] = None):
         collection = self.get_or_create_collection(collection_name)
         embeddings = self.embedding_model.encode(documents).tolist()
         if ids is None:
-            ids = [str(i) for i in range(len(documents))]
+            ids = [str(uuid.uuid4()) for _ in range(len(documents))]
         collection.add(
             documents=documents,
             embeddings=embeddings,
@@ -32,6 +34,8 @@ class VectorStore:
 
     async def similarity_search(self, collection_name: str, query: str, k: int = 5) -> List[dict]:
         collection = self.get_or_create_collection(collection_name)
+        if collection.count() == 0:
+            return []
         query_embedding = self.embedding_model.encode(query).tolist()
         results = collection.query(
             query_embeddings=[query_embedding],

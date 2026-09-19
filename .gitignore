@@ -1,5 +1,6 @@
 # Runtime / generated
 venv/
+*.db
 *.log
 *.log.err
 *.pid

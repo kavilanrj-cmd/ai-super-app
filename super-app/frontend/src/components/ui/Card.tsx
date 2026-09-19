@@ -23,7 +23,7 @@ export function Card({
         glass
           ? 'glass-card'
           : 'bg-[#0d0d17]/80 border border-white/[0.06]',
-        'rounded-2xl p-5 relative',
+        'rounded-2xl p-6 relative',
         hoverable && 'hover:-translate-y-1 hover:shadow-card-hover transition-all duration-300 cursor-pointer',
         gradientBorder && 'gradient-border',
         glow && 'shadow-glow',
@@ -46,7 +46,7 @@ export function CardHeader({ className, children, ...props }: HTMLAttributes<HTM
 
 export function CardTitle({ className, children, ...props }: HTMLAttributes<HTMLHeadingElement>) {
   return (
-    <h3 className={cn('text-lg font-semibold tracking-tight text-gray-100', className)} {...props}>
+    <h3 className={cn('text-xl font-semibold tracking-tight text-[var(--text-primary)]', className)} {...props}>
       {children}
     </h3>
   );

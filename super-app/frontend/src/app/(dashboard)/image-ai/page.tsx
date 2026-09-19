@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import type { ElementType } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, Button, Textarea, Tabs, Select, PageHeader } from '@/components/ui';
+import { AIResponse } from '@/components/ai';
 import { aiAPI } from '@/lib/api';
 import { Image, FileText, Type, Sparkles, ScanText, Captions, Loader2 } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
@@ -179,7 +180,7 @@ export default function ImageAIPage() {
                               className="w-full rounded-xl border border-white/10 max-h-[480px] object-contain"
                             />
                           ) : (
-                            <p className="text-sm whitespace-pre-wrap text-gray-300 leading-relaxed">{result}</p>
+                            <AIResponse content={result} disableToolbar />
                           )}
                         </div>
                       </motion.div>
@@ -199,7 +200,7 @@ export default function ImageAIPage() {
                     {description && (
                       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
                         <div className="glass-card p-4">
-                          <p className="text-sm whitespace-pre-wrap text-gray-300 leading-relaxed">{description}</p>
+                          <AIResponse content={description} disableToolbar />
                         </div>
                       </motion.div>
                     )}
@@ -237,7 +238,7 @@ export default function ImageAIPage() {
                     {ocrText && (
                       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
                         <div className="glass-card p-4">
-                          <p className="text-sm whitespace-pre-wrap text-gray-300 leading-relaxed font-mono">{ocrText}</p>
+                          <AIResponse content={ocrText} disableToolbar />
                         </div>
                       </motion.div>
                     )}

@@ -1,20 +1,26 @@
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Request
+from fastapi.responses import Response
 from app.core.security import get_current_user
 from app.models.user import User
 from app.agents import agent_coordinator
 from app.llm.provider import llm_provider
 from app.services.rag_service import RAGService
-from app.services.ocr_service import OCRService
+from app.services.resume_service import ResumeService
 from app.services.voice_service import VoiceService
+from app.services.vision_service import vision_service
 from app.utils.file_handler import save_upload
 from app.schemas.ai import (
     AIChatRequest, CodeExplainRequest, CodeFixRequest, CodeGenerateRequest,
     CodeReviewRequest, SummarizeRequest, TranslateRequest, ResearchRequest,
     CareerRoadmapRequest, InterviewQuestionRequest, SalaryPredictionRequest,
     ImageGenerateRequest, WritingRequest, EmailRequest, EmailImproveRequest,
-    MeetingSummaryRequest, BugFinderRequest, RagQueryRequest, RagProcessRequest
+    MeetingSummaryRequest, BugFinderRequest, RagQueryRequest
 )
 from typing import Optional
+import os
+import logging
+
+logger = logging.getLogger("ai_api")
 
 router = APIRouter(prefix="/ai", tags=["AI"])
 
@@ -113,21 +119,33 @@ async def generate_image(req: ImageGenerateRequest, current_user: User = Depends
 
 @router.post("/image/describe")
 async def describe_image(file: UploadFile = File(...), current_user: User = Depends(get_current_user)):
-    file_path = await save_upload(file, "images")
-    result = await agent_coordinator.process_with_agent("vision", f"Describe this image in detail: {file_path}")
-    return {"description": result}
+    description = await vision_service.analyze_image(
+        file,
+        "Describe this image in detail, including the main subject, setting, colors, and any notable details.",
+        system="You are a visual analyst. Describe the image you can actually see based on its pixel content.",
+    )
+    return {"description": description}
 
 @router.post("/image/caption")
 async def caption_image(file: UploadFile = File(...), current_user: User = Depends(get_current_user)):
-    file_path = await save_upload(file, "images")
-    result = await agent_coordinator.process_with_agent("vision", f"Generate a short caption for this image: {file_path}")
-    return {"caption": result}
+    caption = await vision_service.analyze_image(
+        file,
+        "Generate a short, meaningful caption (one sentence) for this image based on what is actually visible.",
+        system="You are a visual analyst. Write your caption strictly from the image content you can see.",
+    )
+    return {"caption": caption}
 
 @router.post("/ocr")
 async def extract_ocr(file: UploadFile = File(...), language: str = Form("eng"), current_user: User = Depends(get_current_user)):
-    file_path = await save_upload(file, "ocr")
-    text = await OCRService.extract_text(file_path, language)
-    return {"text": text}
+    text = await vision_service.analyze_image(
+        file,
+        "Extract all visible text from this image. Return exactly the detected text with no extra commentary. "
+        "If there is no readable text, respond with exactly: No text detected.",
+        system="You are an OCR engine reading the actual pixel content of the image.",
+    )
+    if not text or text.strip().lower() == "no text detected":
+        return {"text": "No text detected.", "words": [], "confidences": []}
+    return {"text": text.strip(), "words": [], "confidences": []}
 
 @router.post("/voice/stt")
 async def speech_to_text(file: UploadFile = File(...), current_user: User = Depends(get_current_user)):
@@ -136,14 +154,64 @@ async def speech_to_text(file: UploadFile = File(...), current_user: User = Depe
     return {"text": text}
 
 @router.post("/voice/tts")
-async def text_to_speech(text: str = Form(...), language: str = Form("en"), current_user: User = Depends(get_current_user)):
-    file_path = await VoiceService.text_to_speech(text, language)
-    return {"audio_url": file_path}
+async def text_to_speech(text: str = Form(...), current_user: User = Depends(get_current_user)):
+    try:
+        audio = await VoiceService.text_to_speech(text)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except RuntimeError as exc:
+        logger.error("Voice TTS provider error: %s", exc)
+        raise HTTPException(status_code=502, detail="Speech generation failed. Please try again.")
+    except Exception as exc:
+        logger.error("Voice TTS unexpected error: %s", exc)
+        raise HTTPException(status_code=500, detail="Speech generation failed. Please try again.")
+    return Response(
+        content=audio,
+        media_type=VoiceService.audio_content_type(audio),
+        headers={"Cache-Control": "no-store", "X-Content-Type-Options": "nosniff"},
+    )
 
 @router.post("/rag/process")
-async def process_document(req: RagProcessRequest, current_user: User = Depends(get_current_user)):
-    chunks = await RAGService.process_document(req.collection_name, req.text)
-    return {"chunks_created": chunks}
+async def process_document(request: Request, current_user: User = Depends(get_current_user)):
+    content_type = request.headers.get("content-type", "")
+    collection_name = ""
+    text = ""
+    metadata = {}
+
+    if "multipart/form-data" in content_type or "application/x-www-form-urlencoded" in content_type:
+        form = await request.form()
+        collection_name = (form.get("collection_name") or "").strip()
+        text = (form.get("text") or "").strip()
+        file = form.get("file")
+        if file is not None and getattr(file, "filename", None):
+            if not collection_name:
+                raise HTTPException(status_code=400, detail="collection_name is required")
+            file_path = await save_upload(file, "rag")
+            try:
+                text = await ResumeService.parse_resume(file_path)
+            except Exception as e:
+                raise HTTPException(status_code=400, detail=f"Could not read document: {e}")
+            metadata = {
+                "filename": file.filename,
+                "file_type": os.path.splitext(file.filename or "")[1].lower().lstrip("."),
+            }
+    else:
+        body = await request.json()
+        collection_name = (body.get("collection_name") or "").strip()
+        text = (body.get("text") or "").strip()
+
+    if not collection_name:
+        raise HTTPException(status_code=400, detail="collection_name is required")
+    if not text.strip():
+        raise HTTPException(status_code=400, detail="text or a supported document file (pdf/docx/txt) is required")
+
+    chunks = await RAGService.process_document(collection_name, text)
+    return {
+        "chunks_created": chunks,
+        "collection_name": collection_name,
+        "metadata": metadata,
+        "characters": len(text),
+    }
 
 @router.post("/rag/query")
 async def query_document(req: RagQueryRequest, current_user: User = Depends(get_current_user)):

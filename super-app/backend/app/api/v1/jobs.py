@@ -1,12 +1,16 @@
-from fastapi import APIRouter, Depends, Query
+from typing import Optional
+
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.security import get_current_user
 from app.models.user import User
-from app.services.job_service import JobService
-from typing import Optional
+from app.services.job_service import JobProviderError, JobService
+from app.services.job_service import logger
 
 router = APIRouter(prefix="/jobs", tags=["Jobs"])
+
+UNAVAILABLE = "Job search service is currently unavailable. Please try again."
 
 @router.get("/search")
 async def search_jobs(
@@ -16,17 +20,14 @@ async def search_jobs(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    jobs = await JobService.search_jobs(db, query, location, job_type)
-    return [
-        {
-            "id": j.id, "title": j.title, "company": j.company,
-            "location": j.location, "job_type": j.job_type,
-            "salary_min": j.salary_min, "salary_max": j.salary_max,
-            "description": j.description[:500] if j.description else "",
-            "source_url": j.source_url, "created_at": str(j.created_at)
-        }
-        for j in jobs
-    ]
+    try:
+        return await JobService.search_jobs(db, query, location, job_type)
+    except JobProviderError as exc:
+        logger.warning("JOB SEARCH DEBUG - search failed for query=%r location=%r: %s", query, location, exc)
+        raise HTTPException(status_code=503, detail=UNAVAILABLE) from exc
+    except Exception:
+        logger.exception("JOB SEARCH DEBUG - unexpected error for query=%r location=%r", query, location)
+        raise HTTPException(status_code=500, detail=UNAVAILABLE)
 
 @router.get("/saved")
 async def get_saved_jobs(db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):

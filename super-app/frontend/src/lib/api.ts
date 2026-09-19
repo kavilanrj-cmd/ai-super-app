@@ -4,7 +4,10 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL || '/api/v1';
 
 export const api = axios.create({
   baseURL: API_BASE,
-  headers: { 'Content-Type': 'application/json' },
+  // No default Content-Type header: axios sets `application/json` for JSON
+  // object bodies automatically, and for FormData lets the browser generate
+  // the correct `multipart/form-data; boundary=...` (avoiding `body.file:
+  // Field required` on file uploads).
 });
 
 api.interceptors.request.use((config) => {
@@ -35,7 +38,9 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    const url = originalRequest?.url || '';
+    const isAuthEndpoint = url.includes('/auth/login') || url.includes('/auth/register');
+    if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
@@ -83,6 +88,7 @@ export const authAPI = {
   register: (data: { email: string; username: string; password: string; full_name?: string }) => api.post('/auth/register', data),
   me: () => api.get('/auth/me'),
   refresh: (refresh_token: string) => api.post('/auth/refresh', { refresh_token }),
+  updateUsername: (username: string) => api.patch('/auth/profile/username', { username }),
 };
 
 export const chatAPI = {
@@ -145,7 +151,7 @@ export const chatAPI = {
 };
 
 export const resumeAPI = {
-  analyze: (formData: FormData) => api.post('/resume/analyze', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  analyze: (formData: FormData) => api.post('/resume/analyze', formData),
   history: () => api.get('/resume/history'),
 };
 
@@ -163,13 +169,24 @@ export const aiAPI = {
   interview: (role: string, company?: string) => api.post('/ai/career/interview', { role, company }),
   salary: (role: string, experience: number, location: string, skills: string) => api.post('/ai/career/salary', { role, experience, location, skills }),
   generateImage: (prompt: string, style?: string) => api.post('/ai/image/generate', { prompt, style }),
-  describeImage: (formData: FormData) => api.post('/ai/image/describe', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
-  captionImage: (formData: FormData) => api.post('/ai/image/caption', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
-  ocr: (formData: FormData) => api.post('/ai/ocr', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
-  stt: (formData: FormData) => api.post('/ai/voice/stt', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
-  tts: (text: string, language?: string) => api.post('/ai/voice/tts', { text, language }),
+  describeImage: (formData: FormData) => api.post('/ai/image/describe', formData),
+  captionImage: (formData: FormData) => api.post('/ai/image/caption', formData),
+  ocr: (formData: FormData) => api.post('/ai/ocr', formData),
+  stt: (formData: FormData) => api.post('/ai/voice/stt', formData),
+  tts: (text: string) => {
+    const formData = new FormData();
+    formData.append('text', text);
+    return api.post('/ai/voice/tts', formData, { responseType: 'blob' });
+  },
   ragQuery: (collection_name: string, query: string) => api.post('/ai/rag/query', { collection_name, query }),
   ragProcess: (collection_name: string, text: string) => api.post('/ai/rag/process', { collection_name, text }),
+  ragProcessFile: (collection_name: string, file: File, text?: string) => {
+    const form = new FormData();
+    form.append('collection_name', collection_name);
+    form.append('file', file);
+    if (text && text.trim()) form.append('text', text);
+    return api.post('/ai/rag/process', form);
+  },
   notes: (topic: string) => api.post('/ai/notes', { topic }),
   mindmap: (topic: string) => api.post('/ai/mindmap', { topic }),
   meetingSummary: (transcript: string) => api.post('/ai/meeting/summarize', { transcript }),
@@ -179,8 +196,8 @@ export const aiAPI = {
   generateEmail: (email_type: string, context: string, recipient_name?: string, recipient_email?: string, subject?: string, tone?: string) =>
     api.post('/ai/email/generate', { email_type, context, recipient_name, recipient_email, subject, tone }),
   improveEmail: (email_content: string, tone?: string) => api.post('/ai/email/improve', { email_content, tone }),
-  generateCoverLetter: (formData: FormData) => api.post('/ai/cover-letter/generate', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
-  generateInterviewPrep: (formData: FormData) => api.post('/ai/interview/generate', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  generateCoverLetter: (formData: FormData) => api.post('/ai/cover-letter/generate', formData),
+  generateInterviewPrep: (formData: FormData) => api.post('/ai/interview/generate', formData),
 };
 
 export const docAPI = {

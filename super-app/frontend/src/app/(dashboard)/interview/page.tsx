@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardHeader, CardTitle, CardContent, Button, Input, Select, Tabs, PageHeader, EmptyState } from '@/components/ui';
+import { AIResponse } from '@/components/ai';
 import { aiAPI } from '@/lib/api';
 import { GraduationCap, Copy, Check, Sparkles, Brain, MessageSquare, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -24,9 +25,7 @@ function ResultPanel({ icon, title, text, onCopy, copied }: { icon: React.ReactN
         </Button>
       </CardHeader>
       <CardContent>
-        <div className="bg-black/30 border border-white/[0.06] rounded-xl p-5 text-sm text-gray-300 whitespace-pre-wrap leading-relaxed max-h-[560px] overflow-y-auto">
-          {text}
-        </div>
+        <AIResponse content={text} disableToolbar />
       </CardContent>
     </Card>
   );

@@ -14,8 +14,8 @@ import {
 import { Message, AgentType } from '@/types';
 import toast from 'react-hot-toast';
 import { formatTime } from '@/lib/utils';
-import { Markdown, ThinkingIndicator, Skeleton } from '@/components/ui';
-import { cn } from '@/lib/utils';
+import { ThinkingIndicator, Skeleton } from '@/components/ui';
+import { AIResponse } from '@/components/ai';import { cn } from '@/lib/utils';
 
 const agents: { type: AgentType; icon: any; label: string; color: string }[] = [
   { type: 'resume', icon: FileText, label: 'Resume', color: 'from-blue-500 to-cyan-500' },
@@ -653,7 +653,7 @@ export default function ChatPage() {
                                 {isUser ? (
                                   <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</p>
                                 ) : (
-                                  <Markdown content={msg.content} />
+                                  <AIResponse content={msg.content} disableToolbar />
                                 )}
                               </div>
                             )}
@@ -703,7 +703,7 @@ export default function ChatPage() {
                     <div className="glass-card !rounded-2xl px-4 py-3.5 max-w-[85%] sm:max-w-[78%] min-w-[120px]">
                       {streamingContent ? (
                         <div className="relative">
-                          <Markdown content={streamingContent} />
+                          <AIResponse content={streamingContent} disableToolbar />
                           <span className="streaming-cursor" aria-hidden="true" />
                         </div>
                       ) : (

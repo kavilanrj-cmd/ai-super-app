@@ -31,6 +31,9 @@ class UserUpdate(BaseModel):
     avatar_url: Optional[str] = None
     preferences: Optional[str] = None
 
+class UserUpdateUsername(BaseModel):
+    username: str = Field(..., min_length=3, max_length=30)
+
 class Token(BaseModel):
     access_token: str
     refresh_token: str

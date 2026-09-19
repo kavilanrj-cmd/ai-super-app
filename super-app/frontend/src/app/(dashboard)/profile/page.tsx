@@ -2,14 +2,95 @@
 
 import { motion } from 'framer-motion';
 import { useStore } from '@/lib/store';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
+import { toast } from 'react-hot-toast';
 import {
   User, Mail, Shield, Sparkles, BadgeCheck, Calendar, CreditCard, Gauge, Activity
 } from 'lucide-react';
-import { PageHeader, AnimatedNumber, CircularProgress } from '@/components/ui';
+import { PageHeader, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Input, Button } from '@/components/ui';
+import { authAPI } from '@/lib/api';
 import { cn } from '@/lib/utils';
+
+function AnimatedNumber({ value }: { value: number }) {
+  return <span>{value}</span>;
+}
+
+function CircularProgress({
+  value,
+  size = 120,
+  strokeWidth = 10,
+  label = '',
+  sublabel = '',
+}: {
+  value: number;
+  size?: number;
+  strokeWidth?: number;
+  label?: string;
+  sublabel?: string;
+}) {
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (Math.min(Math.max(value, 0), 100) / 100) * circumference;
+
+  return (
+    <div className="relative inline-flex flex-col items-center justify-center" style={{ width: size, height: size }}>
+      <svg width={size} height={size} className="-rotate-90">
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          strokeWidth={strokeWidth}
+          className="fill-none stroke-white/5"
+        />
+        <motion.circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          strokeWidth={strokeWidth}
+          strokeLinecap="round"
+          className="fill-none stroke-primary-500"
+          strokeDasharray={circumference}
+          initial={{ strokeDashoffset: circumference }}
+          animate={{ strokeDashoffset: offset }}
+          transition={{ duration: 1.2, ease: 'easeOut' }}
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="text-2xl font-bold text-white">
+          {value}
+          {label}
+        </span>
+        {sublabel && <span className="text-xs text-gray-500 mt-1">{sublabel}</span>}
+      </div>
+    </div>
+  );
+}
 
 export default function ProfilePage() {
   const user = useStore((s) => s.user);
+  const setUser = useStore((s) => s.setUser);
+  const queryClient = useQueryClient();
+
+  const [isUsernameModalOpen, setIsUsernameModalOpen] = useState(false);
+  const [newUsername, setNewUsername] = useState('');
+  const [usernameError, setUsernameError] = useState<string | null>(null);
+
+  const { mutate: updateUsernameMutation, isPending: isUpdatingUsername } = useMutation({
+    mutationFn: (username: string) => authAPI.updateUsername(username),
+    onSuccess: async (data) => {
+      queryClient.invalidateQueries({ queryKey: ['user'] });
+      toast.success('Username updated successfully');
+      setIsUsernameModalOpen(false);
+      setNewUsername('');
+      setUsernameError(null);
+      // Update the store with the new user data
+      setUser(data.data);
+    },
+    onError: (error: any) => {
+      setUsernameError(error?.response?.data?.detail || error?.message || 'Failed to update username');
+    },
+  });
 
   const profileItems = [
     { icon: Mail, label: 'Email', value: user?.email, color: 'from-blue-500 to-cyan-500' },
@@ -28,15 +109,21 @@ export default function ProfilePage() {
         subtitle="Your account information and usage"
         actions={
           <div className="flex items-center gap-2">
-            <span className="px-3 py-1 text-xs rounded-full bg-primary-500/10 text-primary-300 border border-primary-500/20">
+            <span className="px-3 py-1 text-sm rounded-full bg-primary-500/10 text-primary-300 border border-primary-500/20">
               {user?.role || 'User'}
             </span>
             {user?.is_verified && (
-              <span className="px-3 py-1 text-xs rounded-full bg-blue-500/10 text-blue-300 border border-blue-500/20">
-                <BadgeCheck className="w-3 h-3 inline mr-1 -mt-0.5" />
+              <span className="px-3 py-1 text-sm rounded-full bg-blue-500/10 text-blue-300 border border-blue-500/20">
+                <BadgeCheck className="w-3.5 h-3.5 inline mr-1 -mt-0.5" />
                 Verified
               </span>
             )}
+            <button
+              onClick={() => setIsUsernameModalOpen(true)}
+              className="px-3 py-1 text-sm rounded-full bg-secondary-500/10 text-secondary-300 border border-secondary-500/20 hover:bg-secondary-500/20 hover:text-secondary-100 transition-colors"
+            >
+              Change Username
+            </button>
           </div>
         }
       />
@@ -57,24 +144,64 @@ export default function ProfilePage() {
                 {user?.username?.charAt(0).toUpperCase() || 'U'}
               </span>
             </div>
-            <div className="flex-1 min-w-0">
-              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight gradient-text-animated">
-                {user?.full_name || user?.username}
-              </h1>
-              <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                <p className="text-sm text-gray-500">@{user?.username}</p>
-                {user?.is_verified && <BadgeCheck className="w-4 h-4 text-blue-400" />}
+              <div className="flex-1 min-w-0">
+                <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight gradient-text-animated">
+                  {user?.full_name || user?.username}
+                </h1>
+                <div className="flex items-center gap-2 mt-2 flex-wrap">
+                  <p className="text-base text-gray-500">@{user?.username}</p>
+                  {user?.is_verified && <BadgeCheck className="w-5 h-5 text-blue-400" />}
+                </div>
               </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="px-3 py-1 text-xs rounded-full bg-white/[0.03] text-gray-400 border border-white/[0.07]">
-                <Activity className="w-3 h-3 inline mr-1 -mt-0.5" />
-                Member since {user?.created_at ? new Date(user.created_at).toLocaleDateString() : '—'}
-              </span>
-            </div>
+              <div className="flex items-center gap-2">
+                <span className="px-3.5 py-1.5 text-sm rounded-full bg-white/[0.03] text-gray-400 border border-white/[0.07]">
+                  <Activity className="w-4 h-4 inline mr-1 -mt-0.5" />
+                  Member since {user?.created_at ? new Date(user.created_at).toLocaleDateString() : '—'}
+                </span>
+              </div>
           </div>
         </div>
       </motion.div>
+
+      {/* Change Username Modal */}
+      <Modal open={isUsernameModalOpen} onClose={() => setIsUsernameModalOpen(false)}>
+        <ModalHeader>Change Username</ModalHeader>
+        <ModalBody className="pb-0">
+          {usernameError && (
+            <div className="p-3 rounded-xl bg-red-500/10 text-red-300 text-sm mb-4">
+              {usernameError}
+            </div>
+          )}
+          <Input
+            placeholder="new username"
+            value={newUsername}
+            onChange={(e) => setNewUsername(e.target.value)}
+            disabled={isUpdatingUsername}
+            className="w-full"
+          />
+        </ModalBody>
+        <ModalFooter className="justify-between pt-4">
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            onClick={() => {
+              setNewUsername('');
+              setUsernameError(null);
+              setIsUsernameModalOpen(false);
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            size="sm"
+            disabled={!newUsername.trim() || isUpdatingUsername}
+            onClick={() => updateUsernameMutation(newUsername)}
+          >
+            {isUpdatingUsername ? 'Saving...' : 'Save Changes'}
+          </Button>
+        </ModalFooter>
+      </Modal>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Account information */}
@@ -84,7 +211,7 @@ export default function ProfilePage() {
           transition={{ delay: 0.2, duration: 0.5 }}
           className="lg:col-span-2 space-y-4"
         >
-          <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+          <h2 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2.5">
             <Gauge className="w-5 h-5 text-primary-400" />
             Account Information
           </h2>
@@ -95,14 +222,14 @@ export default function ProfilePage() {
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.25 + i * 0.05 }}
-                className="glass-card p-4 flex items-center gap-4 group hover:border-primary-500/25"
+                className="glass-card p-5 flex items-center gap-4 group:hover:border-primary-500/25"
               >
-                <div className={cn('w-10 h-10 rounded-xl bg-gradient-to-br flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform', item.color)}>
-                  <item.icon className="w-4 h-4 text-white" />
+                <div className={cn('w-11 h-11 rounded-xl bg-gradient-to-br flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform', item.color)}>
+                  <item.icon className="w-5 h-5 text-white" />
                 </div>
                 <div className="min-w-0">
                   <p className="text-xs text-gray-500 uppercase tracking-wider">{item.label}</p>
-                  <p className="font-medium text-sm text-gray-200 truncate">
+                  <p className="font-medium text-[15px] text-gray-100 truncate">
                     {item.label === 'Credits' ? (
                       <AnimatedNumber value={Number(item.value) || 0} />
                     ) : (

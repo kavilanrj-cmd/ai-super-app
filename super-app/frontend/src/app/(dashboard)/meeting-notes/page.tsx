@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardHeader, CardTitle, CardContent, Button, Textarea, Tabs, PageHeader, EmptyState } from '@/components/ui';
+import { AIResponse } from '@/components/ai';
 import { aiAPI } from '@/lib/api';
 import { StickyNote, FileText, ListChecks, Check, Copy, Loader2, Sparkles } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
@@ -185,9 +186,7 @@ export default function MeetingNotesPage() {
                       </Button>
                     </CardHeader>
                     <CardContent>
-                      <div className="bg-black/30 border border-white/[0.06] rounded-xl p-5 text-sm text-gray-300 whitespace-pre-wrap leading-relaxed max-h-[480px] overflow-y-auto">
-                        {summary}
-                      </div>
+                      <AIResponse content={summary} disableToolbar />
                     </CardContent>
                   </Card>
                 </motion.div>

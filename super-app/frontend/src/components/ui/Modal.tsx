@@ -21,8 +21,7 @@ const sizes = {
   xl: 'max-w-4xl',
 };
 
-export function Modal({ open, onClose, title, children, className, size = 'md' }: ModalProps) {
-  useEffect(() => {
+export function Modal({ open, onClose, title, children, className, size = 'md' }: ModalProps) {  useEffect(() => {
     if (open) {
       document.body.style.overflow = 'hidden';
       const onKey = (e: KeyboardEvent) => {
@@ -81,4 +80,25 @@ export function Modal({ open, onClose, title, children, className, size = 'md' }
       )}
     </AnimatePresence>
   );
+}
+
+interface ModalSectionProps {
+  className?: string;
+  children: ReactNode;
+}
+
+export function ModalContent({ className, children }: ModalSectionProps) {
+  return <div className={cn('space-y-4', className)}>{children}</div>;
+}
+
+export function ModalHeader({ className, children }: ModalSectionProps) {
+  return <h2 className={cn('text-xl font-semibold text-gray-100 mb-4', className)}>{children}</h2>;
+}
+
+export function ModalBody({ className, children }: ModalSectionProps) {
+  return <div className={cn('space-y-4', className)}>{children}</div>;
+}
+
+export function ModalFooter({ className, children }: ModalSectionProps) {
+  return <div className={cn('flex items-center gap-3 pt-4', className)}>{children}</div>;
 }

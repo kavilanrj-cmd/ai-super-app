@@ -19,6 +19,8 @@ const config: Config = {
       },
       maxWidth: {
         '8xl': '1440px',
+        '9xl': '1600px',
+        'dashboard': '1560px',
       },
       colors: {
         primary: {

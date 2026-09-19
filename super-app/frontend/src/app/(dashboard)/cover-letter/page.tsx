@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardHeader, CardTitle, CardContent, Button, Textarea, Input, Select, PageHeader, EmptyState } from '@/components/ui';
+import { AIResponse } from '@/components/ai';
 import { aiAPI } from '@/lib/api';
 import { FileEdit, Copy, Check, Download, Sparkles, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -113,9 +114,7 @@ export default function CoverLetterPage() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="bg-black/30 border border-white/[0.06] rounded-xl p-5 text-sm text-gray-300 whitespace-pre-wrap leading-relaxed max-h-[560px] overflow-y-auto">
-                  {coverLetter}
-                </div>
+                <AIResponse content={coverLetter} disableToolbar />
               </CardContent>
             </Card>
           ) : loading ? (

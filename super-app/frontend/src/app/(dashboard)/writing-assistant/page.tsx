@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Card, CardHeader, CardTitle, CardContent, Button, Input, Select, Markdown, PageHeader, EmptyState } from '@/components/ui';
+import { Card, CardHeader, CardTitle, CardContent, Button, Input, Select, PageHeader, EmptyState } from '@/components/ui';
+import { AIResponse } from '@/components/ai';
 import { aiAPI } from '@/lib/api';
 import { PenTool, Copy, Check, Sparkles, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -119,9 +120,7 @@ export default function WritingAssistantPage() {
                 </Button>
               </CardHeader>
               <CardContent>
-                <div className="bg-black/30 border border-white/[0.06] rounded-xl p-5 max-h-[560px] overflow-y-auto">
-                  <Markdown content={generatedContent} />
-                </div>
+                <AIResponse content={generatedContent} disableToolbar />
               </CardContent>
             </Card>
           ) : loading ? (

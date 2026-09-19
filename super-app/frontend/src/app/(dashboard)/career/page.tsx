@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Button, Card, CardContent, CardHeader, CardTitle, Input, PageHeader, EmptyState } from '@/components/ui';
+import { AIResponse } from '@/components/ai';
 import { cn } from '@/lib/utils';
 
 type Mode = 'roadmap' | 'interview' | 'salary' | 'challenges';
@@ -178,9 +179,7 @@ export default function CareerPage() {
                 </Button>
               </CardHeader>
               <CardContent>
-                <div className="bg-black/30 border border-white/[0.06] rounded-xl p-5 text-sm text-gray-300 whitespace-pre-wrap leading-relaxed max-h-[560px] overflow-y-auto">
-                  {result}
-                </div>
+                <AIResponse content={result} disableToolbar />
               </CardContent>
             </Card>
           ) : loading ? (

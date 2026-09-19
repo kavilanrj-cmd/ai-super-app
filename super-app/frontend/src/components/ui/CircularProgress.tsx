@@ -69,11 +69,11 @@ export function CircularProgress({
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="font-bold tracking-tight text-white" style={{ fontSize: size / 5 }}>
+        <span className="font-bold tracking-tight text-white" style={{ fontSize: size / 4.5 }}>
           {Math.round(progress)}
-          {label && <span className="text-[0.5em] text-gray-400 ml-0.5">{label}</span>}
+          {label && <span className="text-[0.45em] text-gray-400 ml-0.5">{label}</span>}
         </span>
-        {sublabel && <span className="text-xs text-gray-500 mt-0.5">{sublabel}</span>}
+        {sublabel && <span className="text-[14px] text-gray-500 mt-1">{sublabel}</span>}
       </div>
     </div>
   );

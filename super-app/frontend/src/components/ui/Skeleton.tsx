@@ -24,12 +24,12 @@ export function SkeletonText({ className, lines = 3 }: { className?: string; lin
 
 export function SkeletonCard({ className }: { className?: string }) {
   return (
-    <div className={cn('glass-card p-5 space-y-4', className)}>
-      <div className="flex items-center gap-3">
-        <Skeleton className="w-10 h-10 rounded-xl" />
-        <div className="flex-1 space-y-2">
-          <Skeleton className="h-3 w-1/2" />
-          <Skeleton className="h-2.5 w-1/3" />
+    <div className={cn('glass-card !p-7 space-y-5', className)}>
+      <div className="flex items-center gap-4">
+        <Skeleton className="w-12 h-12 rounded-xl" />
+        <div className="flex-1 space-y-2.5">
+          <Skeleton className="h-4 w-1/2" />
+          <Skeleton className="h-3 w-1/3" />
         </div>
       </div>
       <SkeletonText lines={2} />

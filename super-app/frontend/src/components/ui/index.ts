@@ -4,7 +4,7 @@ export { Card, CardHeader, CardTitle, CardContent } from './Card';
 export { Badge } from './Badge';
 export { Tabs } from './Tabs';
 export { Select } from './Select';
-export { Modal } from './Modal';
+export { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from './Modal';
 export { Textarea } from './Textarea';
 export { Skeleton, SkeletonText, SkeletonCard, SkeletonChatBubble, SkeletonChart } from './Skeleton';
 export { Markdown, CodeBlock, CopyButton } from './Markdown';

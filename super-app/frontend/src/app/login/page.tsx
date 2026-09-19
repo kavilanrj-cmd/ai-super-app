@@ -4,6 +4,8 @@ import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/lib/hooks';
+import { PARTICLES, makeParticles } from '@/lib/particles';
+import AnimatedBackground from '@/components/layout/AnimatedBackground';
 import { Sparkles, Mail, Lock, User, Eye, EyeOff, ArrowRight, Check, Shield, Zap, Brain, Wand2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -14,16 +16,8 @@ const features = [
 ];
 
 function FloatingParticles({ count = 40 }) {
-  const particles = useMemo(() =>
-    Array.from({ length: count }, (_, i) => ({
-      id: i,
-      x: Math.random() * 100,
-      y: Math.random() * 100,
-      size: Math.random() * 3.5 + 1,
-      duration: Math.random() * 8 + 5,
-      delay: Math.random() * 6,
-      opacity: Math.random() * 0.35 + 0.08,
-    })),
+  const particles = useMemo(
+    () => (count === PARTICLES.length ? PARTICLES : makeParticles(count)),
     [count]
   );
 
@@ -81,7 +75,20 @@ export default function LoginPage() {
       }
       router.push('/dashboard');
     } catch (err: any) {
-      toast.error(err.response?.data?.detail || 'Something went wrong');
+      const detail = err.response?.data?.detail;
+      if (detail) {
+        toast.error(detail);
+      } else if (!err.response) {
+        const isDev = process.env.NODE_ENV === 'development';
+        if (isDev) {
+          console.error('[login] network error:', err);
+          toast.error('Unable to reach the server. Make sure the backend is running.');
+        } else {
+          toast.error('Unable to reach the server. Please try again.');
+        }
+      } else {
+        toast.error('Something went wrong');
+      }
     } finally {
       setLoading(false);
     }
@@ -95,6 +102,7 @@ export default function LoginPage() {
 
   return (
     <div className="relative min-h-screen flex items-stretch bg-[#050508] overflow-hidden">
+      <AnimatedBackground />
       <FloatingParticles />
 
       <div className="fixed inset-0 overflow-hidden pointer-events-none">

@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { PageHeader, EmptyState } from '@/components/ui';
+import { AIResponse } from '@/components/ai';
 import { cn } from '@/lib/utils';
 
 const docTypes = [
@@ -261,9 +262,7 @@ export default function DocumentsPage() {
                   </button>
                 </div>
               </div>
-              <div className="relative bg-black/30 border border-white/[0.06] rounded-xl p-5 max-h-[500px] overflow-y-auto">
-                <p className="text-sm text-gray-300 whitespace-pre-wrap leading-relaxed">{result}</p>
-              </div>
+              <AIResponse content={result} disableToolbar />
               <div className="mt-4 flex gap-3">
                 <button onClick={copyResult} className="btn-primary flex-1 flex items-center justify-center gap-2">
                   {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}

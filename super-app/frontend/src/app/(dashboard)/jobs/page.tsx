@@ -16,17 +16,26 @@ export default function JobsPage() {
   const [jobs, setJobs] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
 
   const searchJobs = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!query.trim()) return toast.error('Enter a search query');
     setLoading(true);
+    setSearchError(null);
     try {
       const res = await jobAPI.search(query, location || undefined);
       setJobs(res.data);
       setHasSearched(true);
-    } catch (err) {
-      toast.error('Failed to search jobs');
+    } catch (err: any) {
+      setJobs([]);
+      setHasSearched(true);
+      const detail = err?.response?.data?.detail;
+      setSearchError(
+        typeof detail === 'string' && detail
+          ? detail
+          : 'Job search service is currently unavailable. Please try again.'
+      );
     } finally {
       setLoading(false);
     }
@@ -87,11 +96,23 @@ export default function JobsPage() {
 
       {loading ? (
         <div className="space-y-3">
+          <p className="text-sm text-gray-400 flex items-center gap-2">
+            <Search className="w-4 h-4 text-primary-400 animate-pulse" /> Searching jobs...
+          </p>
           {[0, 1, 2].map((i) => (
             <motion.div key={i} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
               <SkeletonCard />
             </motion.div>
           ))}
+        </div>
+      ) : searchError ? (
+        <div className="glass-card">
+          <EmptyState
+            icon={<Briefcase className="w-8 h-8 text-amber-400" />}
+            title="Job search service is currently unavailable"
+            description={searchError}
+            className="!py-14"
+          />
         </div>
       ) : jobs.length > 0 ? (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="space-y-3">
@@ -122,22 +143,22 @@ export default function JobsPage() {
                         </span>
                       )}
                     </div>
-                    {(job.job_type || job.salary_min) && (
-                      <div className="flex flex-wrap gap-1.5 mt-2.5">
-                        {job.job_type && (
-                          <span className="px-3 py-1 text-xs rounded-full bg-blue-500/10 text-blue-300 border border-blue-500/20">
-                            <Clock className="w-3 h-3 inline mr-1 -mt-0.5" />
-                            {job.job_type}
-                          </span>
+                    {(job.job_type || job.salary || job.salary_min) && (
+                          <div className="flex flex-wrap gap-1.5 mt-2.5">
+                            {job.job_type && (
+                              <span className="px-3 py-1 text-xs rounded-full bg-blue-500/10 text-blue-300 border border-blue-500/20">
+                                <Clock className="w-3 h-3 inline mr-1 -mt-0.5" />
+                                {job.job_type}
+                              </span>
+                            )}
+                            {(job.salary || (job.salary_min && job.salary_max)) && (
+                              <span className="px-3 py-1 text-xs rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
+                                <DollarSign className="w-3 h-3 inline mr-1 -mt-0.5" />
+                                {job.salary || `${job.salary_min}k - ${job.salary_max}k`}
+                              </span>
+                            )}
+                          </div>
                         )}
-                        {job.salary_min && (
-                          <span className="px-3 py-1 text-xs rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
-                            <DollarSign className="w-3 h-3 inline mr-1 -mt-0.5" />
-                            ${job.salary_min}k - ${job.salary_max}k
-                          </span>
-                        )}
-                      </div>
-                    )}
                     {job.description && (
                       <p className="text-sm text-gray-400 mt-2.5 line-clamp-2">{job.description}</p>
                     )}
@@ -179,10 +200,10 @@ export default function JobsPage() {
         <div className="glass-card">
           <EmptyState
             icon={<Briefcase className="w-8 h-8 text-primary-400" />}
-            title={hasSearched ? 'No jobs found' : 'Search for jobs to get started'}
+            title={hasSearched ? 'No jobs found for this search.' : 'Search for jobs to get started'}
             description={
               hasSearched
-                ? 'Try adjusting your search terms or location to find more opportunities.'
+                ? 'Try another keyword or location.'
                 : 'Enter a job title, skill, or keyword above to discover opportunities.'
             }
             className="!py-14"

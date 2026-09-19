@@ -1,10 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, update
+from sqlalchemy.exc import IntegrityError
+import re
 from datetime import datetime, timezone
 from app.core.database import get_db
 from app.core.security import hash_password, verify_password, create_access_token, create_refresh_token, decode_token, get_current_user as require_auth
-from app.schemas.user import UserCreate, UserLogin, Token, TokenRefresh, UserResponse, UserUpdate
+from app.schemas.user import UserCreate, UserLogin, Token, TokenRefresh, UserResponse, UserUpdate, UserUpdateUsername
 from app.models.user import User
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -70,4 +72,50 @@ async def refresh_token(refresh_data: TokenRefresh, db: AsyncSession = Depends(g
 
 @router.get("/me", response_model=UserResponse)
 async def get_me(current_user: User = Depends(require_auth)):
+    return UserResponse.model_validate(current_user)
+
+@router.patch("/profile/username", response_model=UserResponse)
+async def update_username(
+    data: UserUpdateUsername,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_auth),
+):
+    username = (data.username or "").strip()
+    
+    # Validate username
+    if not username:
+        raise HTTPException(status_code=400, detail="Username cannot be empty")
+    
+    if len(username) < 3:
+        raise HTTPException(status_code=400, detail="Username must be at least 3 characters")
+    
+    if len(username) > 30:
+        raise HTTPException(status_code=400, detail="Username must not exceed 30 characters")
+    
+    # Validate allowed characters (letters, numbers, underscore, hyphen)
+    import re
+    if not re.match(r'^[a-zA-Z0-9_-]+$', username):
+        raise HTTPException(status_code=400, detail="Username can only contain letters, numbers, underscore, and hyphen")
+    
+    # Check username uniqueness (excluding current user)
+    result = await db.execute(select(User).where(User.username == username))
+    existing_user = result.scalar_one_or_none()
+    if existing_user and existing_user.id != current_user.id:
+        raise HTTPException(status_code=400, detail="Username is already taken")
+    
+    # Check username uniqueness (excluding current user)
+    result = await db.execute(select(User).where(User.username == username))
+    existing_user = result.scalar_one_or_none()
+    if existing_user and existing_user.id != current_user.id:
+        raise HTTPException(status_code=400, detail="Username is already taken")
+    
+    # Update username
+    current_user.username = username
+    await db.flush()
+    try:
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        raise HTTPException(status_code=400, detail="Username is already taken")
+    
     return UserResponse.model_validate(current_user)

@@ -7,6 +7,9 @@ from app.models.resume import Resume
 from app.services.resume_service import ResumeService
 from app.utils.file_handler import save_upload
 from typing import Optional
+import logging
+
+logger = logging.getLogger("resume_api")
 
 router = APIRouter(prefix="/resume", tags=["Resume"])
 
@@ -17,8 +20,14 @@ async def analyze_resume(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    file_path = await save_upload(file, "resumes")
-    result = await ResumeService.analyze_resume(file_path, job_description or "")
+    try:
+        file_path = await save_upload(file, "resumes")
+        result = await ResumeService.analyze_resume(file_path, job_description or "")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Resume analysis failed (user=%s, filename=%s): %s", current_user.id, file.filename, e)
+        raise HTTPException(status_code=400, detail=f"Could not analyze resume: {e}")
 
     resume = Resume(
         user_id=current_user.id,
@@ -30,6 +39,7 @@ async def analyze_resume(
         is_processed=True
     )
     db.add(resume)
+    await db.commit()
 
     return result
 

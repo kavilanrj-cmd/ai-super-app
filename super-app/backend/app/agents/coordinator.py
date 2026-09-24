@@ -9,9 +9,9 @@ class AgentCoordinator:
     def __init__(self):
         self.agents = {
             "resume": ResumeAgent(),
-            "career": CareerAgent(),
+            "career": CareerAgent(max_tokens=950),
             "research": ResearchAgent(),
-            "coding": CodingAgent(),
+            "coding": CodingAgent(max_tokens=950),
             "medical": MedicalAgent(),
             "finance": FinanceAgent(),
             "translator": TranslatorAgent(),

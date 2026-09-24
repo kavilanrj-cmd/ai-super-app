@@ -10,6 +10,8 @@ async def save_upload(file: UploadFile, subdir: str = "") -> str:
     ext = file.filename.split(".")[-1].lower() if "." in file.filename else ""
     if ext not in ALLOWED_EXTENSIONS:
         raise HTTPException(status_code=400, detail=f"File type .{ext} not allowed")
+    if getattr(file, "size", 0) is not None and file.size > settings.MAX_UPLOAD_SIZE:
+        raise HTTPException(status_code=400, detail="File too large")
 
     upload_dir = os.path.join(settings.UPLOAD_DIR, subdir)
     os.makedirs(upload_dir, exist_ok=True)

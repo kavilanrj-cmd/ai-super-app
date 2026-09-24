@@ -39,7 +39,7 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
     const url = originalRequest?.url || '';
-    const isAuthEndpoint = url.includes('/auth/login') || url.includes('/auth/register');
+    const isAuthEndpoint = url.includes('/auth/login') || url.includes('/auth/register') || url.includes('/auth/refresh');
     if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
@@ -165,8 +165,32 @@ export const aiAPI = {
   generateCode: (prompt: string, language?: string) => api.post('/ai/code/generate', { prompt, language }),
   reviewCode: (code: string, language?: string) => api.post('/ai/code/review', { code, language }),
   findBugs: (code: string, language?: string) => api.post('/ai/code/bug-finder', { code, language }),
-  roadmap: (current_role: string, target_role: string) => api.post('/ai/career/roadmap', { current_role, target_role }),
-  interview: (role: string, company?: string) => api.post('/ai/career/interview', { role, company }),
+  roadmap: (
+    current_role: string,
+    target_role: string,
+    opts?: { experience_level?: string; tech_stack?: string; learning_time?: string }
+  ) =>
+    api.post('/ai/career/roadmap', {
+      current_role,
+      target_role,
+      experience_level: opts?.experience_level,
+      tech_stack: opts?.tech_stack,
+      learning_time: opts?.learning_time,
+    }),
+  interview: (
+    role: string,
+    company?: string,
+    question_types?: string[],
+    experience_level?: string
+  ) =>
+    api.post('/ai/career/interview', {
+      role,
+      company,
+      question_types,
+      experience_level,
+    }),
+  challenge: (language: string, difficulty: string, topic: string) =>
+    api.post('/ai/career/challenge', { language, difficulty, topic }),
   salary: (role: string, experience: number, location: string, skills: string) => api.post('/ai/career/salary', { role, experience, location, skills }),
   generateImage: (prompt: string, style?: string) => api.post('/ai/image/generate', { prompt, style }),
   describeImage: (formData: FormData) => api.post('/ai/image/describe', formData),
@@ -207,7 +231,17 @@ export const docAPI = {
 };
 
 export const jobAPI = {
-  search: (query: string, location?: string, job_type?: string) => api.get('/jobs/search', { params: { query, location, job_type } }),
+  search: (params: {
+    query: string;
+    location?: string;
+    job_type?: string;
+    experience_level?: string;
+    remote?: string;
+    salary_min?: number;
+    salary_max?: number;
+    page?: number;
+    limit?: number;
+  }) => api.get('/jobs/search', { params }),
   saved: () => api.get('/jobs/saved'),
   save: (id: number) => api.post(`/jobs/${id}/save`),
   recommendations: () => api.get('/jobs/recommendations'),
@@ -233,4 +267,22 @@ export const adminAPI = {
 export const notificationsAPI = {
   list: () => api.get('/notifications/'),
   markRead: (id: number) => api.post(`/notifications/${id}/read`),
+};
+
+export const appBuilderAPI = {
+  status: () => api.get('/app-builder/status'),
+  projects: () => api.get('/app-builder/projects'),
+  generate: (prompt: string, template?: string) => api.post('/app-builder/generate', { prompt, template }),
+  iterate: (projectId: string, prompt: string) => api.post(`/app-builder/${projectId}/iterate`, { prompt }),
+  build: (projectId: string) => api.post(`/app-builder/${projectId}/build`),
+  files: (projectId: string) => api.get(`/app-builder/${projectId}/files`),
+  file: (projectId: string, path: string) => api.get(`/app-builder/${projectId}/file`, { params: { path } }),
+  download: (projectId: string) => api.get(`/app-builder/${projectId}/download`, { responseType: 'blob' }),
+  previewStart: (projectId: string) => api.post(`/app-builder/${projectId}/preview/start`),
+  previewStop: (projectId: string) => api.post(`/app-builder/${projectId}/preview/stop`),
+  previewRestart: (projectId: string) => api.post(`/app-builder/${projectId}/preview/restart`),
+  rename: (projectId: string, name: string) => api.post(`/app-builder/${projectId}/rename`, { name }),
+  duplicate: (projectId: string, name?: string) => api.post(`/app-builder/${projectId}/duplicate`, { name }),
+  deleteProject: (projectId: string) => api.delete(`/app-builder/${projectId}`),
+  repair: (projectId: string, errors: string) => api.post(`/app-builder/${projectId}/repair`, { errors }),
 };

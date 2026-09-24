@@ -75,10 +75,10 @@ export default function DashboardPage() {
   }, []);
 
   const stats = [
-    { icon: MessageSquare, label: 'Total Chats', value: analytics?.total_chats || 0, gradient: 'from-violet-500 to-blue-500', glow: 'rgba(110,54,251,0.45)', accentText: 'bg-violet-400' },
-    { icon: FileText, label: 'Documents', value: analytics?.total_documents || 0, gradient: 'from-blue-500 to-indigo-500', glow: 'rgba(59,130,246,0.45)', accentText: 'bg-blue-400' },
-    { icon: CalendarDays, label: 'Active Days', value: analytics?.active_days || 0, gradient: 'from-cyan-500 to-blue-500', glow: 'rgba(34,211,238,0.45)', accentText: 'bg-cyan-400' },
-    { icon: Coins, label: 'AI Credits', value: user?.credits ?? 0, gradient: 'from-indigo-500 to-violet-500', glow: 'rgba(99,102,241,0.45)', accentText: 'bg-indigo-400' },
+    { icon: MessageSquare, label: 'Total Chats', value: analytics?.total_chats || 0, tone: 'oklch(0.67 0.23 252)' },
+    { icon: FileText, label: 'Documents', value: analytics?.total_documents || 0, tone: 'oklch(0.67 0.29 325)' },
+    { icon: CalendarDays, label: 'Active Days', value: analytics?.active_days || 0, tone: 'oklch(0.79 0.18 194)' },
+    { icon: Coins, label: 'AI Credits', value: user?.credits ?? 0, tone: 'oklch(0.78 0.19 60)' },
   ];
 
   const progressItems = [
@@ -91,7 +91,7 @@ export default function DashboardPage() {
   const activities: ActivityItem[] = [
     ...recentChats.map((c) => ({ type: 'chat' as const, title: c.title || 'AI chat session', at: c.updated_at || c.created_at })),
     ...documents.map((d) => ({ type: 'document' as const, title: d.title || 'New document', at: d.created_at || d.updated_at })),
-    ...resumeHistory.map((h) => ({ type: 'resume' as const, title: h.filename ? `Resume analyzed — ${h.filename}` : 'Resume analyzed', at: h.created_at || h.analyzed_at })),
+    ...resumeHistory.map((h) => ({ type: 'resume' as const, title: h.title ? `Resume analyzed — ${h.title}` : 'Resume analyzed', at: h.created_at || h.analyzed_at })),
     ...tasks.map((t) => ({ type: 'task' as const, title: t.title || 'New task', at: t.created_at || t.updated_at })),
   ]
     .filter((x) => x.at || x.title)
@@ -103,6 +103,7 @@ export default function DashboardPage() {
   return (
     <div className="dashboard-viewport">
       <div className="dash-orb-wrap" aria-hidden="true">
+        <div className="th-space-field" />
         <div className="dash-orb violet" />
         <div className="dash-orb blue" />
         <div className="dash-orb cyan" />
@@ -119,9 +120,7 @@ export default function DashboardPage() {
                 label={stat.label}
                 value={stat.value}
                 icon={stat.icon}
-                gradient={stat.gradient}
-                glow={stat.glow}
-                accentText={stat.accentText}
+                tone={stat.tone}
                 index={i}
               />
             ))}

@@ -24,13 +24,13 @@ async def get_chats(db: AsyncSession = Depends(get_db), current_user: User = Dep
 
 @router.get("/{chat_id}/messages", response_model=list[MessageResponse])
 async def get_messages(chat_id: int, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
-    messages = await chat_service.get_chat_messages(db, chat_id)
+    messages = await chat_service.get_chat_messages(db, chat_id, current_user.id)
     return [MessageResponse.model_validate(m) for m in messages]
 
 @router.post("/{chat_id}/message")
 async def send_message(chat_id: int, data: MessageCreate, current_user: User = Depends(get_current_user)):
     return StreamingResponse(
-        chat_service.stream_chat(chat_id, data.content),
+        chat_service.stream_chat(chat_id, data.content, user_id=current_user.id),
         media_type="text/plain"
     )
 

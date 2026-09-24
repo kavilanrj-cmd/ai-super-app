@@ -1,3 +1,4 @@
+from typing import Optional
 from app.agents.base_agent import BaseAgent
 
 class ResumeAgent(BaseAgent):
@@ -10,12 +11,13 @@ class ResumeAgent(BaseAgent):
         )
 
 class CareerAgent(BaseAgent):
-    def __init__(self):
+    def __init__(self, max_tokens: Optional[int] = None):
         super().__init__(
             name="Career Coach",
             role="Career Development Advisor",
             goal="Generate career roadmaps, interview questions, and provide salary predictions",
-            backstory="Senior career coach who has helped 10000+ professionals advance their careers at top tech companies."
+            backstory="Senior career coach who has helped 10000+ professionals advance their careers at top tech companies.",
+            max_tokens=max_tokens
         )
 
 class ResearchAgent(BaseAgent):
@@ -28,12 +30,13 @@ class ResearchAgent(BaseAgent):
         )
 
 class CodingAgent(BaseAgent):
-    def __init__(self):
+    def __init__(self, max_tokens: Optional[int] = None):
         super().__init__(
             name="Code Expert",
             role="Software Development & Code Analysis Specialist",
             goal="Explain code, fix bugs, generate code, optimize performance, and convert between languages",
-            backstory="Senior software engineer with 20 years of experience across all major programming languages and frameworks."
+            backstory="Senior software engineer with 20 years of experience across all major programming languages and frameworks.",
+            max_tokens=max_tokens
         )
 
 class MedicalAgent(BaseAgent):

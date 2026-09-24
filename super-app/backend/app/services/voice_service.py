@@ -96,12 +96,20 @@ class VoiceService:
 
     @staticmethod
     async def speech_to_text(audio_path: str) -> str:
+        import asyncio
+
         recognizer = sr.Recognizer()
         with sr.AudioFile(audio_path) as source:
             audio = recognizer.record(source)
+
+        def _recognize():
+            return recognizer.recognize_google(audio)
+
         try:
-            text = recognizer.recognize_google(audio)
+            text = await asyncio.wait_for(asyncio.to_thread(_recognize), timeout=60)
             return text
+        except asyncio.TimeoutError:
+            return "Speech recognition timed out. Please try again."
         except sr.UnknownValueError:
             return "Could not understand audio"
         except sr.RequestError:

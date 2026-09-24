@@ -1,6 +1,5 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 from fastapi.exceptions import RequestValidationError
 from contextlib import asynccontextmanager
 from app.core.config import settings
@@ -13,7 +12,7 @@ from app.core.error_handler import (
     general_exception_handler,
 )
 from app.middleware.rate_limit import RateLimitMiddleware
-from app.api.v1 import auth, users, chat, resume, documents, jobs, tasks, ai, analytics, upload, admin, notifications
+from app.api.v1 import auth, users, chat, resume, documents, jobs, tasks, ai, analytics, upload, admin, notifications, app_builder
 from app.auth import oauth
 from sqlalchemy.exc import SQLAlchemyError
 import os
@@ -28,7 +27,13 @@ async def lifespan(app: FastAPI):
     os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
     os.makedirs("chroma_db", exist_ok=True)
     os.makedirs("faiss_index", exist_ok=True)
+    from app.services.app_builder_service import app_builder_service
+    app_builder_service._ensure_workspace()
     yield
+    try:
+        await app_builder_service.stop_all_previews()
+    except Exception as exc:
+        print(f"Preview cleanup warning: {exc}")
     await close_db()
 app = FastAPI(
     title=settings.APP_NAME,
@@ -65,10 +70,8 @@ app.include_router(analytics.router, prefix=api_prefix)
 app.include_router(upload.router, prefix=api_prefix)
 app.include_router(admin.router, prefix=api_prefix)
 app.include_router(notifications.router, prefix=api_prefix)
+app.include_router(app_builder.router, prefix=api_prefix)
 app.include_router(oauth.router, prefix=api_prefix)
-
-os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
-app.mount("/uploads", StaticFiles(directory=settings.UPLOAD_DIR), name="uploads")
 
 @app.get("/")
 async def root():

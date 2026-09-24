@@ -2,6 +2,8 @@ from typing import Optional, AsyncGenerator
 from app.core.config import settings
 from groq import AsyncGroq
 
+GROQ_CALL_TIMEOUT = 120.0
+
 class LLMProvider:
     def __init__(self):
         self.groq_client = None
@@ -9,7 +11,7 @@ class LLMProvider:
 
     def _init_clients(self):
         if settings.GROQ_API_KEY:
-            self.groq_client = AsyncGroq(api_key=settings.GROQ_API_KEY)
+            self.groq_client = AsyncGroq(api_key=settings.GROQ_API_KEY, timeout=GROQ_CALL_TIMEOUT, max_retries=2)
 
     async def get_vision_response(
         self,

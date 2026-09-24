@@ -47,11 +47,20 @@ class ResearchRequest(BaseModel):
 class CareerRoadmapRequest(BaseModel):
     current_role: str
     target_role: str
+    experience_level: Optional[str] = None
+    tech_stack: Optional[str] = None
+    learning_time: Optional[str] = None
+
+class CareerChallengeRequest(BaseModel):
+    language: str = "python"
+    difficulty: str = "medium"
+    topic: str
 
 class InterviewQuestionRequest(BaseModel):
     role: str
     company: Optional[str] = None
     question_types: Optional[list[str]] = None
+    experience_level: Optional[str] = None
 
 class SalaryPredictionRequest(BaseModel):
     role: str

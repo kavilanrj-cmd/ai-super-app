@@ -12,12 +12,12 @@ import {
 } from 'lucide-react';
 
 const features = [
-  { icon: MessageSquare, title: 'AI Chat', desc: 'Conversational AI with smooth, real-time streaming responses.', gradient: 'from-blue-500 to-cyan-500', path: '/dashboard' },
-  { icon: FileText, title: 'Resume Analysis', desc: 'ATS scoring, skill extraction and job-match insights in seconds.', gradient: 'from-purple-500 to-pink-500', path: '/dashboard' },
-  { icon: Code, title: 'Code Review', desc: 'Bug detection, security checks and optimization suggestions.', gradient: 'from-violet-500 to-indigo-500', path: '/dashboard' },
-  { icon: Briefcase, title: 'Career Planning', desc: 'Roadmaps, mock interviews and real salary intelligence.', gradient: 'from-emerald-500 to-teal-500', path: '/dashboard' },
-  { icon: PenTool, title: 'Document Studio', desc: 'Emails, cover letters and long-form writing, generated for you.', gradient: 'from-pink-500 to-rose-500', path: '/dashboard' },
-  { icon: Brain, title: 'Research Agent', desc: 'Deep-dive research and crisp summaries on any topic.', gradient: 'from-amber-500 to-orange-500', path: '/dashboard' },
+  { icon: MessageSquare, title: 'AI Chat', desc: 'Conversational AI with smooth, real-time streaming responses.', gradient: 'from-blue-500 to-cyan-500', path: '/chat' },
+  { icon: FileText, title: 'Resume Analysis', desc: 'ATS scoring, skill extraction and job-match insights in seconds.', gradient: 'from-purple-500 to-pink-500', path: '/resume' },
+  { icon: Code, title: 'Code Review', desc: 'Bug detection, security checks and optimization suggestions.', gradient: 'from-violet-500 to-indigo-500', path: '/code-review' },
+  { icon: Briefcase, title: 'Career Planning', desc: 'Roadmaps, mock interviews and real salary intelligence.', gradient: 'from-emerald-500 to-teal-500', path: '/career' },
+  { icon: PenTool, title: 'Document Studio', desc: 'Emails, cover letters and long-form writing, generated for you.', gradient: 'from-pink-500 to-rose-500', path: '/documents' },
+  { icon: Brain, title: 'Research Agent', desc: 'Deep-dive research and crisp summaries on any topic.', gradient: 'from-amber-500 to-orange-500', path: '/research' },
 ];
 
 const agents = [

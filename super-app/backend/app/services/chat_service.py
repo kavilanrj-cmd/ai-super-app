@@ -1,6 +1,7 @@
 from typing import Optional, AsyncGenerator
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from fastapi import HTTPException
 from app.models.chat import Chat, Message
 from app.agents import agent_coordinator
 from app.llm.provider import llm_provider
@@ -8,6 +9,14 @@ from app.core.database import async_session_factory
 from datetime import datetime
 
 class ChatService:
+    @staticmethod
+    async def _get_owned_chat(db: AsyncSession, chat_id: int, user_id: int) -> Chat:
+        result = await db.execute(select(Chat).where(Chat.id == chat_id, Chat.user_id == user_id))
+        chat = result.scalar_one_or_none()
+        if not chat:
+            raise HTTPException(status_code=404, detail="Chat not found")
+        return chat
+
     @staticmethod
     async def create_chat(db: AsyncSession, user_id: int, title: Optional[str] = None, model: str = "groq", agent_type: Optional[str] = None) -> Chat:
         chat = Chat(user_id=user_id, title=title or "New Chat", model=model, agent_type=agent_type)
@@ -23,7 +32,8 @@ class ChatService:
         return result.scalars().all()
 
     @staticmethod
-    async def get_chat_messages(db: AsyncSession, chat_id: int) -> list:
+    async def get_chat_messages(db: AsyncSession, chat_id: int, user_id: int) -> list:
+        await ChatService._get_owned_chat(db, chat_id, user_id)
         result = await db.execute(
             select(Message).where(Message.chat_id == chat_id).order_by(Message.created_at)
         )
@@ -44,8 +54,10 @@ class ChatService:
         return msg
 
     @staticmethod
-    async def stream_chat(chat_id: int, message: str, agent_type: Optional[str] = None) -> AsyncGenerator[str, None]:
+    async def stream_chat(chat_id: int, message: str, agent_type: Optional[str] = None, user_id: Optional[int] = None) -> AsyncGenerator[str, None]:
         async with async_session_factory() as db:
+            if user_id is not None:
+                await ChatService._get_owned_chat(db, chat_id, user_id)
             await ChatService.add_message(db, chat_id, "user", message)
 
             chat_result = await db.execute(select(Chat).where(Chat.id == chat_id))
@@ -73,7 +85,7 @@ class ChatService:
                             full_response += chunk
                             yield chunk
                 except Exception as e:
-                    error_msg = f"\n\nError: {e}"
+                    error_msg = "\n\nError: Unable to generate a response. Please try again."
                     full_response = error_msg
                     yield error_msg
                 await ChatService.add_message(db, chat_id, "assistant", full_response)

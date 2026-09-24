@@ -46,8 +46,7 @@ async def sqlalchemy_exception_handler(request: Request, exc: SQLAlchemyError):
 
 async def general_exception_handler(request: Request, exc: Exception):
     logger.error(f"Unhandled error on {request.url.path}: {exc}", exc_info=True)
-    detail = str(exc) if settings.DEBUG and str(exc) else "Internal server error"
     return JSONResponse(
         status_code=500,
-        content={"detail": detail, "status_code": 500},
+        content={"detail": "Internal server error", "status_code": 500},
     )

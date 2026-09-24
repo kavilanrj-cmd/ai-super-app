@@ -23,6 +23,8 @@ async def test_jobs_search_returns_503_and_clear_message_without_provider(client
         raise JobProviderError("not configured")
 
     monkeypatch.setattr(job_service, "_fetch_jsearch", _fail)
+    monkeypatch.setattr(job_service, "_fetch_remotive", _fail)
+    monkeypatch.setattr(job_service, "_fallback_provider", lambda: "remotive")
     headers = await _register(client, "jobs503@example.com")
 
     res = await client.get(
@@ -31,7 +33,7 @@ async def test_jobs_search_returns_503_and_clear_message_without_provider(client
         headers=headers,
     )
     assert res.status_code == 503
-    assert res.json()["detail"] == "Job search service is currently unavailable. Please try again."
+    assert res.json()["detail"] == "Unable to fetch jobs right now. Please try again."
 
 
 SAMPLE = [
@@ -66,10 +68,11 @@ SAMPLE = [
 
 @pytest.mark.asyncio
 async def test_jobs_search_returns_normalized_jobs_from_provider(client: AsyncClient, monkeypatch):
-    async def _fake(query, location):
-        return SAMPLE
+    async def _fake(*args, **kwargs):
+        return SAMPLE, len(SAMPLE), False
 
     monkeypatch.setattr(job_service, "_fetch_jsearch", _fake)
+    monkeypatch.setattr(job_service, "_fetch_remotive", _fake)
     headers = await _register(client, "jobs200@example.com")
 
     res = await client.get(
@@ -79,26 +82,28 @@ async def test_jobs_search_returns_normalized_jobs_from_provider(client: AsyncCl
     )
     assert res.status_code == 200
     data = res.json()
-    assert len(data) == 2
-    for job in data:
+    assert isinstance(data, dict) and "jobs" in data
+    assert len(data["jobs"]) == 2
+    for job in data["jobs"]:
         for key in REQUIRED_KEYS:
             assert key in job, f"missing normalized key {key}"
-        assert "source_url" in job
+        assert "url" in job
         assert "id" in job
-    assert data[0]["title"] == "Senior Full Stack Developer"
-    assert data[0]["company"] == "TechCorp"
-    assert data[1]["job_type"] == "Full-time"
+    assert data["jobs"][0]["title"] == "Senior Full Stack Developer"
+    assert data["jobs"][0]["company"] == "TechCorp"
+    assert data["jobs"][1]["employment_type"] == "Full-time"
+    assert data["jobs"][0]["source"] == "unknown"
 
     res2 = await client.get(
         "/api/v1/jobs/search",
         params={"query": "react developer", "location": "Mumbai"},
         headers=headers,
     )
-    assert len(res2.json()) == 2
+    assert len(res2.json()["jobs"]) == 2
 
 
 def test_normalize_jsearch_tolerates_missing_fields():
-    out = _normalize_jsearch({"job_title": "  Python Developer  "})
+    out = _normalize_jsearch({"job_title": "  Python Developer  "}, source="jsearch")
     assert out["title"] == "Python Developer"
     assert out["location"] == ""
     assert out["salary"] is None
@@ -116,9 +121,10 @@ def test_normalize_jsearch_builds_salary_and_location():
         "job_country": "India",
         "job_minimum_salary": 1200000,
         "job_maximum_salary": 1800000,
+        "job_salary_currency": "INR",
         "job_employment_type": "FULLTIME",
         "job_apply_link": "https://x.example.com/a",
-    })
+    }, source="jsearch")
     assert out["location"] == "Bangalore, Karnataka, India"
     assert out["salary"] == "₹1,200,000 - ₹1,800,000"
     assert out["employment_type"] == "FULLTIME"
@@ -126,13 +132,13 @@ def test_normalize_jsearch_builds_salary_and_location():
 
 
 def test_normalize_jsearch_ignores_zero_salary():
-    out = _normalize_jsearch({"job_title": "X", "job_minimum_salary": 0, "job_maximum_salary": 0})
+    out = _normalize_jsearch({"job_title": "X", "job_minimum_salary": 0, "job_maximum_salary": 0}, source="jsearch")
     assert out["salary"] is None
     assert out["salary_min"] is None
 
 
 def test_normalize_adzuna_tolerates_missing_fields():
-    out = _normalize_adzuna({})
+    out = _normalize_adzuna({}, source="adzuna")
     assert out["title"] == ""
     assert out["company"] == ""
     assert out["salary"] is None

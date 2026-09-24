@@ -10,11 +10,16 @@ import {
   BarChart3, User, Settings, Shield, ChevronLeft, ChevronRight,
   Sparkles, LogOut, Image, Mic, StickyNote, Mail,
   PenTool, BookOpen, Search, Code, Bug, FileEdit, GraduationCap,
-  X, Command, NotebookPen, Target, FolderOpen, ChevronRight as ChevronRightSmall
+  X, Command, NotebookPen, Target, FolderOpen, ChevronRight as ChevronRightSmall,
+  Rocket
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navGroups = [
+  {
+    label: 'Builder',
+    items: [{ icon: Rocket, label: 'AI App Builder', path: '/app-builder', featured: true }],
+  },
   {
     label: 'Home',
     items: [{ icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' }],
@@ -75,6 +80,8 @@ function SidebarContent({ collapsed, onNavigate }: SidebarContentProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { logout, user } = useAuth();
+
+  const visibleFooterLinks = user?.role === 'admin' ? footerLinks : footerLinks.filter((l) => l.path !== '/admin');
   const isDark = useStore((s) => s.isDark);
   const searchRef = useRef<HTMLInputElement>(null);
 
@@ -185,6 +192,7 @@ function SidebarContent({ collapsed, onNavigate }: SidebarContentProps) {
               <div className="space-y-0.5">
                 {group.items.map((item) => {
                   const isActive = pathname === item.path;
+                  const featured = (item as any).featured;
                   return (
                     <button
                       key={item.path}
@@ -199,7 +207,9 @@ function SidebarContent({ collapsed, onNavigate }: SidebarContentProps) {
                         collapsed ? 'px-0 justify-center' : 'px-3',
                         isActive
                           ? 'sb-link-active border'
-                          : 'sb-link border border-transparent'
+                          : featured
+                            ? 'border border-primary-400/40 bg-gradient-to-r from-primary-500/15 via-violet-500/[0.08] to-fuchsia-500/15 hover:border-primary-400/60 hover:shadow-glow-sm'
+                            : 'sb-link border border-transparent'
                       )}
                     >
                       <item.icon
@@ -207,12 +217,20 @@ function SidebarContent({ collapsed, onNavigate }: SidebarContentProps) {
                           'w-5 h-5 shrink-0 transition-all duration-200',
                           isActive
                             ? 'sb-icon-active'
-                            : 'sb-text-faint group-hover:sb-icon group-hover:sb-hover-icon group-hover:scale-110'
+                            : featured
+                              ? 'text-cyan-300 group-hover:sb-icon group-hover:scale-110'
+                              : 'sb-text-faint group-hover:sb-icon group-hover:sb-hover-icon group-hover:scale-110'
                         )}
                       />
                       {!collapsed && (
                         <span className={cn('truncate flex-1 text-left transition-colors', isActive ? 'sb-text' : '')}>
                           {item.label}
+                        </span>
+                      )}
+                      {!collapsed && featured && (
+                        <span className="shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full border border-primary-400/40 bg-gradient-to-r from-primary-500/25 to-fuchsia-500/25 text-[9px] font-bold uppercase tracking-wider text-primary-200">
+                          <Sparkles className="w-2.5 h-2.5" />
+                          Local AI
                         </span>
                       )}
                       {!collapsed && isActive && (
@@ -289,7 +307,7 @@ function SidebarContent({ collapsed, onNavigate }: SidebarContentProps) {
 
         {/* Footer links */}
         <div className="grid grid-cols-1 gap-0.5">
-          {footerLinks.map((link) => {
+          {visibleFooterLinks.map((link) => {
             const isActive = pathname === link.path;
             return collapsed ? (
               <button

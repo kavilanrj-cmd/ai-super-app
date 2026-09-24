@@ -2,18 +2,14 @@
 
 import { useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { cn } from '@/lib/utils';
 import { AnimatedNumber } from '@/components/ui';
 
 interface StatCardProps {
   label: string;
   value: number;
   icon: any;
-  gradient: string;
-  glow: string;
-  accentText: string;
+  tone?: string;
   index?: number;
-  suffix?: string;
 }
 
 function buildSpark(value: number) {
@@ -29,7 +25,7 @@ function buildSpark(value: number) {
   return pts;
 }
 
-export default function StatCard({ label, value, icon: Icon, gradient, glow, accentText, index = 0, suffix }: StatCardProps) {
+export default function StatCard({ label, value, icon: Icon, tone = '#a78bfa', index = 0 }: StatCardProps) {
   const points = useMemo(() => buildSpark(value), [value]);
   const path = `M ${points.join(' L ')}`;
   const areaPath = `${path} L 100,40 L 0,40 Z`;
@@ -39,34 +35,33 @@ export default function StatCard({ label, value, icon: Icon, gradient, glow, acc
       initial={{ opacity: 0, y: 24 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.35 + index * 0.08, duration: 0.5 }}
-      className="stat-card stat-card-compact premium-hover"
-      style={{ '--glow': glow, '--sheen-delay': `${1.2 + index * 0.55}s` } as React.CSSProperties}
+      className="stat-card stat-card-compact premium-hover th-stat"
+      style={
+        {
+          '--tone': tone,
+          '--glow': tone,
+          '--sheen-delay': `${1.2 + index * 0.55}s`,
+        } as React.CSSProperties
+      }
     >
       <span className="stat-sheen" />
-      <span className={cn('stat-icon bg-gradient-to-br', gradient)} style={{ animationDelay: `${index * 0.7}s` }}>
+      <span className="stat-icon" style={{ animationDelay: `${index * 0.7}s` }}>
         <Icon className="text-white" />
       </span>
 
       <div className="flex-1 min-w-0">
         <p className="stat-number font-extrabold tracking-tight text-[var(--text-primary)]">
-          <AnimatedNumber value={value} format={(n) => (suffix ? `${n.toLocaleString()}${suffix}` : n.toLocaleString())} />
+          <AnimatedNumber value={value} format={(n) => n.toLocaleString()} />
         </p>
         <p className="stat-label text-[var(--text-secondary)] font-medium truncate">{label}</p>
       </div>
 
       <div className="stat-spark overflow-hidden opacity-80">
         <svg viewBox="0 0 100 40" preserveAspectRatio="none" className="w-full h-full">
-          <defs>
-            <linearGradient id={`spark-fill-${label.replace(/\s+/g, '')}`} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={glow} stopOpacity="0.35" />
-              <stop offset="100%" stopColor={glow} stopOpacity="0" />
-            </linearGradient>
-          </defs>
-          <path d={areaPath} fill={`url(#spark-fill-${label.replace(/\s+/g, '')})`} />
+          <path d={areaPath} className="spark-area" />
           <path
             d={path}
             fill="none"
-            stroke={glow}
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"

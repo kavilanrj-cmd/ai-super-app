@@ -8,7 +8,10 @@ import toast from 'react-hot-toast';
 import { setCookie, removeCookie } from './utils';
 
 export function useAuth() {
-  const { user, setUser, token, setToken } = useStore();
+  const {
+    user, setUser, token, setToken,
+    setChats, setActiveChat, setMessages, setNotifications, setUnreadCount,
+  } = useStore();
 
   const login = useCallback(async (email: string, password: string) => {
     const res = await authAPI.login(email, password);
@@ -39,7 +42,12 @@ export function useAuth() {
     removeCookie('refresh_token');
     setToken(null);
     setUser(null);
-  }, [setUser, setToken]);
+    setChats([]);
+    setActiveChat(null);
+    setMessages([]);
+    setNotifications([]);
+    setUnreadCount(0);
+  }, [setUser, setToken, setChats, setActiveChat, setMessages, setNotifications, setUnreadCount]);
 
   const loadUser = useCallback(async () => {
     try {
@@ -170,8 +178,27 @@ export function useJobs() {
   });
 
   const searchMutation = useMutation({
-    mutationFn: ({ query, location, job_type }: { query: string; location?: string; job_type?: string }) =>
-      jobAPI.search(query, location, job_type),
+    mutationFn: ({
+      query,
+      location,
+      job_type,
+      experience_level,
+      remote,
+      salary_min,
+      salary_max,
+      page,
+      limit,
+    }: {
+      query: string;
+      location?: string;
+      job_type?: string;
+      experience_level?: string;
+      remote?: string;
+      salary_min?: number;
+      salary_max?: number;
+      page?: number;
+      limit?: number;
+    }) => jobAPI.search({ query, location, job_type, experience_level, remote, salary_min, salary_max, page, limit }),
   });
 
   const saveMutation = useMutation({
@@ -186,7 +213,7 @@ export function useJobs() {
     savedJobs: savedJobsQuery.data || [],
     recommendations: recommendationsQuery.data || [],
     search: searchMutation.mutateAsync,
-    searchResults: searchMutation.data?.data || [],
+    searchResults: searchMutation.data?.data?.jobs || [],
     isSearching: searchMutation.isPending,
     saveJob: saveMutation.mutateAsync,
   };

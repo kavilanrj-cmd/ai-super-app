@@ -26,7 +26,11 @@ async def register(user_data: UserCreate, db: AsyncSession = Depends(get_db)):
         hashed_password=hash_password(user_data.password)
     )
     db.add(user)
-    await db.commit()
+    try:
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        raise HTTPException(status_code=400, detail="Email or username already registered")
     await db.refresh(user)
 
     access_token = create_access_token({"sub": str(user.id)})
@@ -102,13 +106,7 @@ async def update_username(
     existing_user = result.scalar_one_or_none()
     if existing_user and existing_user.id != current_user.id:
         raise HTTPException(status_code=400, detail="Username is already taken")
-    
-    # Check username uniqueness (excluding current user)
-    result = await db.execute(select(User).where(User.username == username))
-    existing_user = result.scalar_one_or_none()
-    if existing_user and existing_user.id != current_user.id:
-        raise HTTPException(status_code=400, detail="Username is already taken")
-    
+
     # Update username
     current_user.username = username
     await db.flush()

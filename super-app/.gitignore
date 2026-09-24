@@ -42,3 +42,7 @@ Thumbs.db
 # Vector stores
 chroma_db/
 faiss_index/
+
+# AI App Builder generated workspaces
+app_builder/
+!app_builder/.gitkeep

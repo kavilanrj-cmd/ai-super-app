@@ -217,7 +217,7 @@ export default function DocumentsPage() {
                       </p>
                     </div>
                     <button
-                      onClick={() => docAPI.generate(doc.doc_type, { context: doc.context || doc.content }).then((r) => { setResult(r.data.content); toast.success('Loaded document'); }).catch(() => {})}
+                      onClick={() => { setResult(doc.content || ''); toast.success('Loaded document'); }}
                       className="p-2 text-gray-500 hover:text-primary-400 transition-colors rounded-lg hover:bg-primary-500/10"
                     >
                       <Copy className="w-3.5 h-3.5" />

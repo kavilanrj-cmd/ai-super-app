@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { motion, useMotionValue, useSpring } from 'framer-motion';
-import { ArrowRight, Upload, Sparkles, Bot, Zap, MessageSquare, Activity } from 'lucide-react';
+import { ArrowRight, Upload, Sparkles, Bot, Zap, Activity } from 'lucide-react';
 import { SPARKLES, makeParticles } from '@/lib/particles';
 
 function greeting() {
@@ -151,26 +151,28 @@ export default function HeroSection({ displayName }: { displayName: string }) {
             style={{ rotateX, rotateY, transformPerspective: 900 }}
             className="w-full h-full flex items-center justify-center will-change-transform"
           >
-            <div className="ai-visual">
-            <div className="ai-halo" />
-            <div className="ai-halo second" />
-            <div className="ai-ring r1" />
-            <div className="ai-ring r2" />
-            <div className="ai-chip c1">
-              <Sparkles className="w-3 h-3 text-primary-300" /> Your AI Partner for a Brighter Tomorrow
+            <div className="th-hero-art" aria-hidden="true">
+              <div className="th-quote-card th-quote-left">
+                Your<br />AI Partner<br />for a Brighter<br />Tomorrow
+              </div>
+
+              <div className="th-robot">
+                <div className="th-antenna"><i /></div>
+                <div className="th-ear left" />
+                <div className="th-ear right" />
+                <div className="th-robot-head">
+                  <div className="th-face"><i /><i /><b>⌣</b></div>
+                </div>
+                <div className="th-robot-body"><Bot /></div>
+                <div className="th-robot-arm">👋</div>
+              </div>
+
+              <div className="th-orbit" />
+
+              <div className="th-quote-card th-quote-right">
+                “Ideas <span>🚀</span><br />+ AI<br />= Opportunities”
+              </div>
             </div>
-            <div className="ai-chip c2">
-              <Zap className="w-3 h-3 text-emerald-300" /> Ideas + AI = Opportunities
-            </div>
-            <div className="ai-chip c3">
-              <MessageSquare className="w-3 h-3 text-pink-300" /> Always-on agents
-            </div>
-            <div className="ai-core">
-              <span className="ai-eye l" />
-              <span className="ai-eye r" />
-              <span className="absolute top-[76px] left-1/2 -translate-x-1/2 h-3 w-8 rounded-b-full border-b-2 border-x border-white/40" />
-            </div>
-          </div>
           </motion.div>
         </motion.div>
       </div>

@@ -24,7 +24,7 @@ async def generate_document(
         content = await DocumentService.generate_document(data.doc_type, data.context)
         if not content or content.startswith("Unknown agent") or content.startswith("No LLM"):
             logger.error(f"Document generation failed: {content}")
-            raise HTTPException(status_code=500, detail=content or "AI returned empty response")
+            raise HTTPException(status_code=500, detail="AI returned an empty response. Please try again.")
         doc = Document(
             user_id=current_user.id,
             title=f"{data.doc_type} - {data.context.get('title', 'Untitled')}",
@@ -40,14 +40,14 @@ async def generate_document(
         raise
     except Exception as e:
         logger.error(f"Document generation error: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Document generation failed. Please try again.")
 
 @router.get("/")
 async def get_documents(db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
     from sqlalchemy import select
     result = await db.execute(select(Document).where(Document.user_id == current_user.id).order_by(Document.created_at.desc()))
     docs = result.scalars().all()
-    return [{"id": d.id, "title": d.title, "doc_type": d.doc_type, "created_at": str(d.created_at)} for d in docs]
+    return [{"id": d.id, "title": d.title, "doc_type": d.doc_type, "created_at": str(d.created_at), "content": d.content_text or ""} for d in docs]
 
 @router.delete("/{doc_id}")
 async def delete_document(doc_id: int, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):

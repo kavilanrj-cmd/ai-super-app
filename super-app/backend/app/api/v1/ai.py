@@ -13,6 +13,7 @@ from app.schemas.ai import (
     AIChatRequest, CodeExplainRequest, CodeFixRequest, CodeGenerateRequest,
     CodeReviewRequest, SummarizeRequest, TranslateRequest, ResearchRequest,
     CareerRoadmapRequest, InterviewQuestionRequest, SalaryPredictionRequest,
+    CareerChallengeRequest,
     ImageGenerateRequest, WritingRequest, EmailRequest, EmailImproveRequest,
     MeetingSummaryRequest, BugFinderRequest, RagQueryRequest
 )
@@ -20,9 +21,20 @@ from typing import Optional
 import os
 import logging
 
+from pydantic import BaseModel
+
 logger = logging.getLogger("ai_api")
 
 router = APIRouter(prefix="/ai", tags=["AI"])
+
+class TopicRequest(BaseModel):
+    topic: str
+
+class UrlRequest(BaseModel):
+    url: str
+
+def _namespace(collection_name: str, user_id: int) -> str:
+    return f"u{user_id}:{collection_name}"
 
 @router.post("/chat")
 async def ai_chat(req: AIChatRequest, current_user: User = Depends(get_current_user)):
@@ -98,19 +110,59 @@ async def research_topic(req: ResearchRequest, current_user: User = Depends(get_
 
 @router.post("/career/roadmap")
 async def generate_roadmap(req: CareerRoadmapRequest, current_user: User = Depends(get_current_user)):
-    result = await agent_coordinator.process_with_agent("career", f"Create detailed career roadmap from {req.current_role} to {req.target_role} with timeline, courses, projects, and resources")
+    details = f"from {req.current_role} to {req.target_role}"
+    if req.experience_level:
+        details += f"\nExperience level: {req.experience_level}"
+    if req.tech_stack:
+        details += f"\nPreferred technology stack: {req.tech_stack}"
+    if req.learning_time:
+        details += f"\nLearning time per week: {req.learning_time}"
+    result = await agent_coordinator.process_with_agent(
+        "career",
+        f"Create a concise career roadmap {details} with timeline, courses, projects, and resources. "
+        "Structure the roadmap into numbered phases (e.g. Phase 1: <title>) that each include a week range "
+        "(e.g. Weeks 1-4) and a bulleted checklist of specific skills/topics/projects. "
+        "Start with a line showing the transition like: <current role> -> <target role>. "
+        "Keep the response compact: use at most 6 phases, 3-5 short checklist bullets per phase, "
+        "and stay under roughly 450 words total.",
+    )
     return {"roadmap": result}
 
 @router.post("/career/interview")
 async def generate_interview_questions(req: InterviewQuestionRequest, current_user: User = Depends(get_current_user)):
     question_types = ", ".join(req.question_types) if req.question_types else "technical, behavioral, hr"
-    result = await agent_coordinator.process_with_agent("career", f"Generate {question_types} interview questions for {req.role} role{f' at {req.company}' if req.company else ''} with answers and tips")
+    target = f"{req.role} role"
+    if req.experience_level:
+        target += f" for a {req.experience_level} level candidate"
+    if req.company:
+        target += f" at {req.company}"
+    result = await agent_coordinator.process_with_agent(
+        "career",
+        f"Generate {question_types} interview questions for {target} with model answers and tips. "
+        "Number each question (1. 2. 3. ...). After each question line, give an 'Answer:' section and a 'Tip:' section on its own line.",
+    )
     return {"questions": result}
 
 @router.post("/career/salary")
 async def predict_salary(req: SalaryPredictionRequest, current_user: User = Depends(get_current_user)):
-    result = await agent_coordinator.process_with_agent("career", f"Predict salary for {req.role} with {req.experience} years in {req.location}. Skills: {req.skills}. Provide range, factors, and growth trajectory.")
+    result = await agent_coordinator.process_with_agent(
+        "career",
+        f"Predict salary for {req.role} with {req.experience} years in {req.location}. Skills: {req.skills}. "
+        "Provide an estimated salary range, then clearly labeled sections 'Entry Level:', 'Mid Level:', and 'Senior Level:' "
+        "with typical figures, plus the factors that affect pay and growth trajectory.",
+    )
     return {"salary_prediction": result}
+
+@router.post("/career/challenge")
+async def generate_coding_challenge(req: CareerChallengeRequest, current_user: User = Depends(get_current_user)):
+    result = await agent_coordinator.process_with_agent(
+        "coding",
+        f"Create a '{req.difficulty}' difficulty coding challenge about '{req.topic}' in {req.language}. "
+        "Return it with clearly labeled sections: 'Problem', 'Example Input', 'Example Output', 'Constraints', "
+        "and 'Starter Code' (starter code inside a ``` code fence). "
+        "Keep the problem concise and beginner-friendly, and make the starter code a compilable scaffold with function signature.",
+    )
+    return {"challenge": result}
 
 @router.post("/image/generate")
 async def generate_image(req: ImageGenerateRequest, current_user: User = Depends(get_current_user)):
@@ -205,7 +257,8 @@ async def process_document(request: Request, current_user: User = Depends(get_cu
     if not text.strip():
         raise HTTPException(status_code=400, detail="text or a supported document file (pdf/docx/txt) is required")
 
-    chunks = await RAGService.process_document(collection_name, text)
+    ns = _namespace(collection_name, current_user.id)
+    chunks = await RAGService.process_document(ns, text)
     return {
         "chunks_created": chunks,
         "collection_name": collection_name,
@@ -215,22 +268,23 @@ async def process_document(request: Request, current_user: User = Depends(get_cu
 
 @router.post("/rag/query")
 async def query_document(req: RagQueryRequest, current_user: User = Depends(get_current_user)):
-    result = await RAGService.query_document(req.collection_name, req.query)
+    ns = _namespace(req.collection_name, current_user.id)
+    result = await RAGService.query_document(ns, req.query)
     return result
 
 @router.post("/youtube/summarize")
-async def summarize_youtube(url: str = Form(...), current_user: User = Depends(get_current_user)):
-    result = await agent_coordinator.process_with_agent("summarizer", f"Summarize this YouTube video content from URL: {url}")
+async def summarize_youtube(req: UrlRequest, current_user: User = Depends(get_current_user)):
+    result = await agent_coordinator.process_with_agent("summarizer", f"Summarize this YouTube video content from URL: {req.url}")
     return {"summary": result}
 
 @router.post("/notes")
-async def create_ai_notes(topic: str = Form(...), current_user: User = Depends(get_current_user)):
-    result = await agent_coordinator.process_with_agent("research", f"Create comprehensive well-organized notes on: {topic}")
+async def create_ai_notes(req: TopicRequest, current_user: User = Depends(get_current_user)):
+    result = await agent_coordinator.process_with_agent("research", f"Create comprehensive well-organized notes on: {req.topic}")
     return {"notes": result}
 
 @router.post("/mindmap")
-async def generate_mindmap(topic: str = Form(...), current_user: User = Depends(get_current_user)):
-    result = await agent_coordinator.process_with_agent("planning", f"Create a detailed mind map structure (with hierarchy and connections) for: {topic}")
+async def generate_mindmap(req: TopicRequest, current_user: User = Depends(get_current_user)):
+    result = await agent_coordinator.process_with_agent("planning", f"Create a detailed mind map structure (with hierarchy and connections) for: {req.topic}")
     return {"mindmap": result}
 
 @router.post("/meeting/summarize")

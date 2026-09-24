@@ -33,13 +33,34 @@ class Settings(BaseSettings):
     # Kept separate from GROQ_MODEL because the chat model is text-only.
     GROQ_VISION_MODEL: str = os.getenv("GROQ_VISION_MODEL", "qwen/qwen3.8-27b")
 
+    # ---------- AI App Builder (local Ollama) ----------
+    # Local inference runtime. No external API token required.
+    # The App Builder talks to Ollama from the FastAPI backend only,
+    # never from the browser.
+    APP_BUILDER_PROVIDER: str = os.getenv("APP_BUILDER_PROVIDER", "ollama")
+    OLLAMA_BASE_URL: str = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+    OLLAMA_MODEL: str = os.getenv("OLLAMA_MODEL", "qwen3:8b")
+    # When Ollama is unreachable, fall back to the existing GROQ configuration.
+    # Off by default so AI App Builder stays fully local without any API token.
+    APP_BUILDER_GROQ_FALLBACK: bool = os.getenv("APP_BUILDER_GROQ_FALLBACK", "false").lower() in ("1", "true", "yes", "on")
+    # Where generated projects are stored. Resolved relative to the project
+    # root so it never depends on the current working directory.
+    APP_BUILDER_WORKSPACE_DIR: str = os.getenv("APP_BUILDER_WORKSPACE_DIR", "app_builder/projects")
+    # First port used by generated app preview servers.
+    APP_BUILDER_PREVIEW_PORT_BASE: int = int(os.getenv("APP_BUILDER_PREVIEW_PORT_BASE", "3100"))
+    # Maximum automated build-repair attempts before giving up.
+    APP_BUILDER_MAX_REPAIRS: int = int(os.getenv("APP_BUILDER_MAX_REPAIRS", "3"))
+
     # ---------- Job Finder ----------
-    # Active job provider: "jsearch" (default, RapidAPI) or "adzuna".
+    # Active primary provider: "jsearch" (RapidAPI) or "adzuna".
     # Credentials are read from the environment; placeholders mean "not set".
     JOB_PROVIDER: str = os.getenv("JOB_PROVIDER", "jsearch")
     JSEARCH_API_KEY: Optional[str] = os.getenv("JSEARCH_API_KEY")
     ADZUNA_APP_ID: Optional[str] = os.getenv("ADZUNA_APP_ID")
     ADZUNA_APP_KEY: Optional[str] = os.getenv("ADZUNA_APP_KEY")
+    # Keyless fallback provider used when the primary provider is not
+    # configured or fails: "remotive" (public remote-jobs API) or "" to disable.
+    JOB_FALLBACK_PROVIDER: str = os.getenv("JOB_FALLBACK_PROVIDER", "remotive")
 
     SUPABASE_URL: Optional[str] = os.getenv("SUPABASE_URL")
     SUPABASE_KEY: Optional[str] = os.getenv("SUPABASE_KEY")
@@ -131,6 +152,11 @@ class Settings(BaseSettings):
     @property
     def groq_api_key_configured(self) -> bool:
         return bool(self.GROQ_API_KEY and "your_groq_api_key" not in self.GROQ_API_KEY)
+
+    @property
+    def app_builder_workspace_path(self) -> str:
+        """Absolute path of the generated-apps workspace (project root based)."""
+        return os.path.join(_BASE_DIR, self.APP_BUILDER_WORKSPACE_DIR)
 
     @property
     def job_provider_configured(self) -> bool:

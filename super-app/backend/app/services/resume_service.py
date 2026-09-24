@@ -1,6 +1,7 @@
 import os
 import re
 import logging
+from datetime import datetime
 import pdfplumber
 from typing import Optional
 from app.agents import agent_coordinator
@@ -30,6 +31,112 @@ def extract_ats_score(analysis: str) -> Optional[float]:
             if 0 <= score <= 100:
                 return float(score)
     return None
+
+
+def _estimate_experience_years(text: str) -> Optional[int]:
+    """Best-effort years-of-experience estimate from a resume's text."""
+    if not text:
+        return None
+    patterns = [
+        re.compile(r"(\d{1,2})\s*\+?\s*(?:years?|yrs?)\s+of?\s*(?:relevant\s+)?experience", re.IGNORECASE),
+        re.compile(r"(\d{1,2})\s*(?:years?|yrs?)\s+experience", re.IGNORECASE),
+    ]
+    for pat in patterns:
+        for m in pat.finditer(text):
+            try:
+                years = int(m.group(1))
+            except (ValueError, IndexError):
+                continue
+            if 0 < years < 50:
+                return years
+    # Fall back to counting date ranges like "2018 - 2022" / "2018–2022".
+    spans = []
+    for m in re.finditer(r"(19|20)\d{2}\s*[-–—/]\s*(present\b|(?:19|20)\d{2})", text, re.IGNORECASE):
+        try:
+            start = int(re.search(r"(19|20)\d{2}", m.group(0)).group(0))
+            end = datetime.now().year if m.group(2).lower() == "present" else int(re.search(r"(19|20)\d{2}", m.group(2)).group(0))
+            spans.append(max(0, end - start))
+        except Exception:
+            continue
+    if spans:
+        return max(0, min(max(spans), 40))
+    return None
+
+
+def _extract_education(text: str) -> Optional[dict]:
+    """Detect the highest education level and school from resume text."""
+    if not text:
+        return None
+    levels = [
+        (r"ph\.?d|doctorate", "Doctorate"),
+        (r"master(?:'s)?\s+of|m\.?s\.?c|mba|m\.?tech|m\.?e\.?ng", "Master's"),
+        (r"bachelor(?:'s)?\s+of|b\.?s\.?c|b\.?tech|b\.?e\.?|b\.?a\.?", "Bachelor's"),
+        (r"associate|diploma|hnd", "Diploma / Associate"),
+    ]
+    best = None
+    for pat, label in levels:
+        if re.search(pat, text, re.IGNORECASE):
+            best = label
+            break
+    if best is None:
+        return None
+    school = None
+    m = re.search(
+        r"(university|institute|college|academy)[^\n.,;|]*",
+        text,
+        re.IGNORECASE,
+    )
+    if m:
+        school = m.group(0).strip()
+    return {"level": best, "school": school}
+
+
+def _extract_certifications(text: str) -> list:
+    """List certification-like mentions (lines containing 'certified' or common cert names)."""
+    if not text:
+        return []
+    cert_keywords = re.compile(
+        r"(certified|certification|certificate|pmp|itil|aws\s+certified|scrum|ccna|comptia)",
+        re.IGNORECASE,
+    )
+    found = []
+    for line in text.splitlines():
+        if cert_keywords.search(line) and len(line.split()) <= 25:
+            clean = line.strip("-*• \t")
+            if clean and clean not in found:
+                found.append(clean[:160])
+    return found[:8]
+
+
+def _extract_job_titles(text: str) -> list:
+    """Common job-title lines drawn from the experience section."""
+    if not text:
+        return []
+    title_re = re.compile(
+        r"^[ \t]*(?:[•\-*]?\s*)*((?:senior|junior|lead|principal|staff|associate|head\s+of|manager|engineer|developer|designer|analyst|scientist|architect|consultant)[^,\n]{1,60})",
+        re.IGNORECASE,
+    )
+    found = []
+    for line in text.splitlines()[:400]:
+        if not any(kw in line.lower() for kw in ("engineer", "developer", "designer", "analyst", "manager", "scientist", "architect", "consultant")):
+            continue
+        m = title_re.match(line)
+        if m:
+            title = m.group(1).strip().strip("-•* \t")
+            if title and title not in found and len(title.split()) <= 8:
+                found.append(title)
+        if len(found) >= 6:
+            break
+    return found
+
+
+def _extract_structured(text: str) -> dict:
+    return {
+        "experience_years": _estimate_experience_years(text),
+        "education": _extract_education(text),
+        "certifications": _extract_certifications(text),
+        "job_titles": _extract_job_titles(text),
+    }
 
 class ResumeService:
     @staticmethod
@@ -87,9 +194,15 @@ class ResumeService:
         ai_ats_score = extract_ats_score(analysis)
         ats_score = ai_ats_score if ai_ats_score is not None else calculate_ats_score(text, job_description)
 
+        structured = _extract_structured(text)
+
         return {
             "parsed_text": text,
             "ats_score": ats_score,
             "skills_found": skills,
-            "analysis": analysis
+            "analysis": analysis,
+            "experience_years": structured["experience_years"],
+            "education": structured["education"],
+            "certifications": structured["certifications"],
+            "job_titles": structured["job_titles"],
         }

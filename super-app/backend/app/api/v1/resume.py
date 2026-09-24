@@ -5,7 +5,7 @@ from app.core.security import get_current_user
 from app.models.user import User
 from app.models.resume import Resume
 from app.services.resume_service import ResumeService
-from app.utils.file_handler import save_upload
+from app.utils.file_handler import save_upload, delete_file
 from typing import Optional
 import logging
 
@@ -20,14 +20,21 @@ async def analyze_resume(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
+    file_path = None
     try:
         file_path = await save_upload(file, "resumes")
         result = await ResumeService.analyze_resume(file_path, job_description or "")
+        if not isinstance(result.get("parsed_text"), str) or not result.get("parsed_text").strip():
+            raise HTTPException(status_code=400, detail="Could not extract text from the uploaded document")
     except HTTPException:
+        if file_path:
+            await delete_file(file_path)
         raise
     except Exception as e:
         logger.error("Resume analysis failed (user=%s, filename=%s): %s", current_user.id, file.filename, e)
-        raise HTTPException(status_code=400, detail=f"Could not analyze resume: {e}")
+        if file_path:
+            await delete_file(file_path)
+        raise HTTPException(status_code=400, detail="Could not analyze resume. Please try another file.")
 
     resume = Resume(
         user_id=current_user.id,
@@ -64,4 +71,7 @@ async def delete_resume(resume_id: int, db: AsyncSession = Depends(get_db), curr
     if not resume:
         raise HTTPException(status_code=404, detail="Resume not found")
     await db.delete(resume)
+    await db.commit()
+    if resume.file_path:
+        await delete_file(resume.file_path)
     return {"message": "Resume deleted"}

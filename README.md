@@ -9,7 +9,7 @@
 ![CrewAI](https://img.shields.io/badge/CrewAI-FF6B35?style=for-the-badge&logo=ai&logoColor=white)
 ![LangChain](https://img.shields.io/badge/LangChain-1C3C3C?style=for-the-badge&logo=langchain&logoColor=white)
 
-A comprehensive AI-powered platform featuring 11 specialized AI agents, real-time chat, resume analysis, career planning, document generation, job search, task management, and more.
+A comprehensive AI-powered platform featuring 11 specialized AI agents, real-time chat, resume analysis, career planning, document generation, job search, task management, an **AI App Builder** that generates and runs apps from natural language on your local machine (Ollama), and more.
 
 </div>
 
@@ -179,6 +179,15 @@ A comprehensive AI-powered platform featuring 11 specialized AI agents, real-tim
 - Notification preferences
 - AI model selection
 
+### 26. 🚀 AI App Builder (Local)
+- Generate a full multi-file app from a single natural-language prompt
+- Iterate on a project via chat until it matches your idea
+- Build / repair cycle that auto-fixes npm errors (up to `APP_BUILDER_MAX_REPAIRS` rounds)
+- Live preview server per project, with start / stop / restart controls
+- File explorer + editor to inspect and tweak generated source
+- Download the project as a ZIP, or duplicate / rename / delete projects
+- Runs **100% locally** through Ollama (`qwen3:8b` default) — no API key required
+
 ---
 
 ## 🧠 Multi-Agent System
@@ -201,6 +210,53 @@ The platform features **11 specialized AI agents** powered by CrewAI and LangCha
 
 ---
 
+## 🧰 Tech Stack
+
+What each technology is used for in this project.
+
+### 🔧 Backend (FastAPI)
+
+| Technology | Used for |
+|-----------|----------|
+| **FastAPI + Uvicorn** | REST API framework and ASGI server |
+| **SQLAlchemy 2 (async) + Alembic** | ORM, database models and migrations |
+| **Pydantic v2** | Request/response schemas & validation |
+| **CrewAI + LangGraph + LangChain** | Multi-agent orchestration (11 specialized agents) |
+| **Groq (qwen3 models)** | Primary LLM inference — chat, agents, career tools, documents, image describe, TTS |
+| **Ollama (qwen3:8b)** | Local LLM for the AI App Builder (no API key, fully offline) |
+| **ChromaDB + FAISS + sentence-transformers** | Vector store & embeddings for PDF Chat / RAG |
+| **pdfplumber / PyPDF2** | PDF text extraction |
+| **pytesseract + Pillow** | OCR (image → text) |
+| **SpeechRecognition (Google)** | Speech-to-text |
+| **Groq TTS (`canopylabs/orpheus`)** | Text-to-speech with WAV repair |
+| **JSearch (RapidAPI) / Adzuna / Remotive** | Job search providers (with automatic fallback) |
+| **JWT (python-jose) + bcrypt** | Authentication & password hashing |
+| **authlib** | OAuth (Google / GitHub) social login |
+| **slowapi** | Per-IP rate limiting |
+| **SQLAdmin** | Admin panel for user/system management |
+| **Celery + Redis** | Background jobs & caching (optional) |
+| **Supabase / AWS S3 (boto3)** | Optional file storage backends |
+| **asyncpg / aiosqlite** | Async DB drivers (PostgreSQL / SQLite) |
+| **SQLAlchemy JSON columns** | Storing agent outputs, job SKUs, resume skills |
+| **httpx** | Async HTTP client (Ollama, job APIs, Groq TTS) |
+
+### 🎨 Frontend (Next.js)
+
+| Technology | Used for |
+|-----------|----------|
+| **Next.js 14 (App Router) + React 18 + TypeScript** | Framework, routing, typing |
+| **Tailwind CSS** | Styling (custom "Thesis Hub" neon dashboard theme) |
+| **TanStack React Query** | Server state, caching, mutations |
+| **Zustand** | Client-side store (auth, chats, notifications) |
+| **Axios** | API client with automatic JWT refresh interceptor |
+| **Framer Motion** | Animations (hero, cards, stat counters) |
+| **Recharts** | Analytics charts |
+| **react-dropzone** | File uploads |
+| **react-markdown + rehype-highlight + remark-gfm** | Rendering AI chat markdown + code blocks |
+| **lucide-react / date-fns / react-hot-toast** | Icons, dates, toasts |
+
+---
+
 ## 🚀 Installation
 
 ### Prerequisites
@@ -209,6 +265,10 @@ The platform features **11 specialized AI agents** powered by CrewAI and LangCha
 - Node.js 18+
 - npm or yarn
 - Git
+- **Ollama** (only for the AI App Builder) — install from <https://ollama.com>, then pull the builder model:
+  ```powershell
+  ollama pull qwen3:8b
+  ```
 
 ### Quick Start (Step-by-Step)
 
@@ -239,6 +299,18 @@ DATABASE_URL=sqlite+aiosqlite:///./super_app.db   # SQLite for quick local start
 SECRET_KEY=<a-long-random-string>
 GROQ_API_KEY=<your-key>    # or OPENAI_API_KEY=sk-...
 ```
+
+Optional — the **AI App Builder** runs on the local Ollama model you pulled above
+(no key needed). Leave these defaults if using `qwen3:8b` at `localhost:11434`:
+
+```env
+APP_BUILDER_PROVIDER=ollama
+OLLAMA_BASE_URL=http://localhost:11434
+OLLAMA_MODEL=qwen3:8b
+```
+
+If you did **not** install Ollama and want the App Builder to fall back to Groq
+instead, add `APP_BUILDER_GROQ_FALLBACK=true`.
 
 Then run migrations and start the server:
 
@@ -332,6 +404,7 @@ super-app/
 │   │   │   ├── documents.py  # Document generation routes
 │   │   │   ├── jobs.py       # Job search routes
 │   │   │   ├── tasks.py      # Task management routes
+│   │   │   ├── app_builder.py# AI App Builder routes
 │   │   │   ├── ai.py         # AI feature routes
 │   │   │   ├── analytics.py  # Analytics routes
 │   │   │   ├── admin.py      # Admin routes
@@ -347,6 +420,7 @@ super-app/
 │   │   ├── models/           # SQLAlchemy models
 │   │   ├── schemas/          # Pydantic schemas
 │   │   ├── services/         # Business logic
+│   │   │   └── app_builder_service.py  # App generation/build/preview engine
 │   │   ├── middleware/       # Rate limiting
 │   │   ├── llm/             # LLM provider
 │   │   ├── vectorstore/     # Vector databases
@@ -444,6 +518,7 @@ The API is available at `http://localhost:8000/docs` (Swagger UI) or `http://loc
 | POST | `/api/v1/ai/code/optimize` | Optimize code |
 | POST | `/api/v1/ai/career/roadmap` | Generate career roadmap |
 | POST | `/api/v1/ai/career/interview` | Generate interview questions |
+| POST | `/api/v1/ai/career/challenge` | Generate coding challenge |
 | POST | `/api/v1/ai/career/salary` | Predict salary |
 | POST | `/api/v1/ai/rag/query` | Query PDF documents |
 | POST | `/api/v1/ai/notes` | Generate notes |
@@ -453,6 +528,26 @@ The API is available at `http://localhost:8000/docs` (Swagger UI) or `http://loc
 | POST | `/api/v1/ai/ocr` | Extract text from image |
 | POST | `/api/v1/ai/voice/stt` | Speech to text |
 | POST | `/api/v1/ai/voice/tts` | Text to speech |
+
+### AI App Builder
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/app-builder/status` | Ollama/provider status |
+| GET | `/api/v1/app-builder/projects` | List user projects |
+| POST | `/api/v1/app-builder/generate` | Generate an app from a prompt |
+| POST | `/api/v1/app-builder/{id}/iterate` | Refine a project via chat |
+| POST | `/api/v1/app-builder/{id}/build` | Install deps & build the app |
+| GET | `/api/v1/app-builder/{id}/files` | List generated files |
+| GET | `/api/v1/app-builder/{id}/file?path=` | Read a file |
+| GET | `/api/v1/app-builder/{id}/download` | Download project as ZIP |
+| POST | `/api/v1/app-builder/{id}/preview/start` | Start live preview server |
+| POST | `/api/v1/app-builder/{id}/preview/stop` | Stop preview server |
+| POST | `/api/v1/app-builder/{id}/preview/restart` | Restart preview server |
+| POST | `/api/v1/app-builder/{id}/rename` | Rename project |
+| POST | `/api/v1/app-builder/{id}/duplicate` | Duplicate project |
+| POST | `/api/v1/app-builder/{id}/repair` | Auto-fix build errors |
+| DELETE | `/api/v1/app-builder/{id}` | Delete project |
 
 ### Documents
 
@@ -586,5 +681,6 @@ npm run lint
 - [Next.js](https://nextjs.org) for the frontend framework
 - [Groq](https://groq.com) for high-speed inference
 - [ChromaDB](https://www.trychroma.com) for vector storage
+- [Ollama](https://ollama.com) for local, key-free inference (AI App Builder)
 
 --

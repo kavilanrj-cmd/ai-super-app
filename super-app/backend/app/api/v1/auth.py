@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update
+from sqlalchemy import select, update, func
 from sqlalchemy.exc import IntegrityError
 import re
 from datetime import datetime, timezone
@@ -40,11 +40,11 @@ async def register(user_data: UserCreate, db: AsyncSession = Depends(get_db)):
 
 @router.post("/login", response_model=Token)
 async def login(login_data: UserLogin, db: AsyncSession = Depends(get_db)):
-    is_email = "@" in login_data.email
-    if is_email:
-        result = await db.execute(select(User).where(User.email == login_data.email))
+    identifier = (login_data.email or "").strip()
+    if "@" in identifier:
+        result = await db.execute(select(User).where(func.lower(User.email) == identifier.lower()))
     else:
-        result = await db.execute(select(User).where(User.username == login_data.email))
+        result = await db.execute(select(User).where(func.lower(User.username) == identifier.lower()))
     user = result.scalar_one_or_none()
 
     if not user or not verify_password(login_data.password, user.hashed_password):

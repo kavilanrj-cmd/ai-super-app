@@ -33,15 +33,22 @@ class Settings(BaseSettings):
     # Kept separate from GROQ_MODEL because the chat model is text-only.
     GROQ_VISION_MODEL: str = os.getenv("GROQ_VISION_MODEL", "qwen/qwen3.8-27b")
 
-    # ---------- AI App Builder (local Ollama) ----------
-    # Local inference runtime. No external API token required.
-    # The App Builder talks to Ollama from the FastAPI backend only,
+    # ---------- AI App Builder (provider) ----------
+    # Cloud-first: Groq is the default App Builder provider. It reuses the
+    # existing GROQ_API_KEY / GROQ_MODEL from this backend .env and never
+    # requires a local LLM, so low-spec machines don't need Ollama at all.
+    # The App Builder talks to the provider from the FastAPI backend only,
     # never from the browser.
-    APP_BUILDER_PROVIDER: str = os.getenv("APP_BUILDER_PROVIDER", "ollama")
+    APP_BUILDER_PROVIDER: str = os.getenv("APP_BUILDER_PROVIDER", "groq")
     OLLAMA_BASE_URL: str = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
     OLLAMA_MODEL: str = os.getenv("OLLAMA_MODEL", "qwen3:8b")
-    # When Ollama is unreachable, fall back to the existing GROQ configuration.
-    # Off by default so AI App Builder stays fully local without any API token.
+    # When the Groq provider is unavailable, allow Ollama as an explicitly
+    # enabled local/offline alternative. Off by default: without this, an
+    # unavailable Groq is reported as a clear error, never silently masked.
+    APP_BUILDER_OLLAMA_FALLBACK: bool = os.getenv("APP_BUILDER_OLLAMA_FALLBACK", "false").lower() in ("1", "true", "yes", "on")
+    # When Ollama is the chosen provider and it is unreachable, fall back to
+    # the existing GROQ configuration. Off by default so the App Builder stays
+    # fully local without any API token when APP_BUILDER_PROVIDER=ollama.
     APP_BUILDER_GROQ_FALLBACK: bool = os.getenv("APP_BUILDER_GROQ_FALLBACK", "false").lower() in ("1", "true", "yes", "on")
     # Where generated projects are stored. Resolved relative to the project
     # root so it never depends on the current working directory.

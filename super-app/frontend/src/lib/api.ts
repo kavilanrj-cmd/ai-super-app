@@ -191,6 +191,8 @@ export const aiAPI = {
     }),
   challenge: (language: string, difficulty: string, topic: string) =>
     api.post('/ai/career/challenge', { language, difficulty, topic }),
+  challengeEvaluate: (payload: { language: string; problem: string; starter_code: string; solution: string }) =>
+    api.post('/ai/career/challenge/evaluate', payload),
   salary: (role: string, experience: number, location: string, skills: string) => api.post('/ai/career/salary', { role, experience, location, skills }),
   generateImage: (prompt: string, style?: string) => api.post('/ai/image/generate', { prompt, style }),
   describeImage: (formData: FormData) => api.post('/ai/image/describe', formData),

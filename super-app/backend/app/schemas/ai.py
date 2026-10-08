@@ -56,6 +56,12 @@ class CareerChallengeRequest(BaseModel):
     difficulty: str = "medium"
     topic: str
 
+class ChallengeEvaluateRequest(BaseModel):
+    language: str = "python"
+    problem: str
+    starter_code: str = ""
+    solution: str
+
 class InterviewQuestionRequest(BaseModel):
     role: str
     company: Optional[str] = None

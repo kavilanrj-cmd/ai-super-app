@@ -2623,3 +2623,104 @@ html.has-scroll-smooth {
 [data-theme='light'] .ab-convo-scroll { color: #1e293b; }
 [data-theme='light'] .ab-empty p { color: rgba(30, 41, 59, 0.5); }
 [data-theme='light'] .ab-preview-empty p { color: rgba(30, 41, 59, 0.7); }
+
+/* ========================================================
+   CINEMATIC UI & SCI-FI OS ENHANCEMENTS
+   ======================================================== */
+
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.perspective-2000 {
+  perspective: 2000px;
+}
+
+.transform-style-3d {
+  transform-style: preserve-3d;
+}
+
+.backface-hidden {
+  backface-visibility: hidden;
+}
+
+.cinematic-glow-purple {
+  box-shadow: 0 0 50px -10px rgba(129, 140, 248, 0.25), 0 0 100px -20px rgba(168, 85, 247, 0.15);
+}
+
+.cinematic-glow-cyan {
+  box-shadow: 0 0 50px -10px rgba(56, 189, 248, 0.25), 0 0 100px -20px rgba(6, 182, 212, 0.15);
+}
+
+.cinematic-glow-magenta {
+  box-shadow: 0 0 50px -10px rgba(244, 114, 182, 0.25), 0 0 100px -20px rgba(236, 72, 153, 0.15);
+}
+
+.cyber-grid {
+  background-size: 40px 40px;
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+}
+
+.cyber-radial-mask {
+  mask-image: radial-gradient(ellipse 65% 55% at 50% 50%, #000 60%, transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse 65% 55% at 50% 50%, #000 60%, transparent 100%);
+}
+
+.cyber-border {
+  position: relative;
+}
+
+.cyber-border::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(129, 140, 248, 0.4), rgba(168, 85, 247, 0.2), rgba(56, 189, 248, 0.3));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+@keyframes pulseGlow {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50% { opacity: 0.75; transform: scale(1.05); }
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 5s ease-in-out infinite;
+}
+
+@keyframes scanline {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(1000%); }
+}
+
+.animate-scanline {
+  animation: scanline 8s linear infinite;
+}
+
+/* Lenis smooth scrolling support */
+html.lenis, html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+.lenis.lenis-scrolling iframe {
+  pointer-events: none;
+}
+

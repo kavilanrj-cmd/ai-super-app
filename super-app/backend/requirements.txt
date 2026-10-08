@@ -12,7 +12,7 @@ httpx==0.28.1
 websockets==15.0.1
 redis==8.0.1
 celery==5.6.3
-crewai==1.15.8
+crewai==1.15.23
 langchain==1.3.14
 langchain-groq==1.1.3
 langchain-openai==1.4.1

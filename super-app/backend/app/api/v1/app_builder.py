@@ -39,7 +39,10 @@ def _handle(exc: Exception) -> HTTPException:
     if isinstance(exc, (AppBuilderError, AIProviderError)):
         detail = str(exc)
         code = 422 if "Invalid project id" in detail or "Empty file" in detail or "Escaped" in detail or "traversal" in detail else 400
-        if "Ollama" in detail or "not running" in detail:
+        low = detail.lower()
+        if "429" in detail or "rate limit" in low or "too many requests" in low:
+            code = 429
+        elif any(k in low for k in ("ollama", "not running", "not configured", "unavailable", "offline", "unreachable", "not reachable", "did not answer")):
             code = 503
         return HTTPException(status_code=code, detail=detail)
     logger.exception("App Builder error: %s", exc)

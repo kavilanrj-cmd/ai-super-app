@@ -10,8 +10,9 @@ import { cn } from '@/lib/utils';
 import { AIResponse } from '@/components/ai';
 import {
   parseRoadmap, parseInterview, parseSalary, parseChallenge,
-  formatSalaryNum, type RoadmapParse, type SalaryParse
+  formatSalaryNum, type RoadmapParse, type SalaryParse, type ChallengeParse
 } from './parsers';
+import { ChallengeSimulator } from './ChallengeSimulator';
 
 function CopyBtn({ text, label = 'Copy', className }: { text: string; label?: string; className?: string }) {
   const [copied, setCopied] = useState(false);
@@ -352,67 +353,87 @@ function CodeBlock({ label, lang, code }: { label: string; lang: string; code: s
   );
 }
 
-export function ChallengeView({ text }: { text: string }) {
+function buildProblemText(parsed: ChallengeParse, fallback: string): string {
+  const blocks: string[] = [];
+  if (parsed.problem) blocks.push(parsed.problem);
+  if (parsed.starterCode && parsed.starterCode.code) {
+    blocks.push(`Starter code (${parsed.starterCode.language || 'code'}):\n${parsed.starterCode.code}`);
+  }
+  if (parsed.exampleInput) blocks.push(`Example Input:\n${parsed.exampleInput}`);
+  if (parsed.exampleOutput) blocks.push(`Example Output:\n${parsed.exampleOutput}`);
+  if (parsed.constraints.length) blocks.push(`Constraints:\n${parsed.constraints.map((c) => `- ${c}`).join('\n')}`);
+  const text = blocks.join('\n\n');
+  return text || fallback;
+}
+
+export function ChallengeView({ text, language = 'python', onNext }: { text: string; language?: string; onNext?: () => void }) {
   const parsed = useMemo(() => parseChallenge(text), [text]);
   const structured = !!parsed.problem || !!parsed.starterCode || !!parsed.exampleInput || parsed.constraints.length > 0;
-
-  if (!structured) {
-    return <AIResponse content={text} disableToolbar />;
-  }
+  const problemText = useMemo(() => buildProblemText(parsed, text), [parsed, text]);
 
   return (
     <div className="space-y-4">
-      {parsed.problem && (
-        <ResultReveal>
-          <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] p-4">
-            <p className="flex items-center gap-2 text-[11px] uppercase tracking-wide text-gray-500 mb-2">
-              <Code2 className="w-3.5 h-3.5 text-primary-400" /> Problem
-            </p>
-            <p className="text-sm text-gray-200 leading-relaxed whitespace-pre-line">{parsed.problem}</p>
-          </div>
-        </ResultReveal>
-      )}
-
-      {(parsed.exampleInput || parsed.exampleOutput) && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {parsed.exampleInput && (
-            <ResultReveal delay={0.08}>
-              <CodeBlock label="Example Input" lang="text" code={parsed.exampleInput} />
+      {structured ? (
+        <>
+          {parsed.problem && (
+            <ResultReveal>
+              <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] p-4">
+                <p className="flex items-center gap-2 text-[11px] uppercase tracking-wide text-gray-500 mb-2">
+                  <Code2 className="w-3.5 h-3.5 text-primary-400" /> Problem
+                </p>
+                <p className="text-sm text-gray-200 leading-relaxed whitespace-pre-line">{parsed.problem}</p>
+              </div>
             </ResultReveal>
           )}
-          {parsed.exampleOutput && (
-            <ResultReveal delay={0.14}>
-              <CodeBlock label="Example Output" lang="text" code={parsed.exampleOutput} />
+
+          {(parsed.exampleInput || parsed.exampleOutput) && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {parsed.exampleInput && (
+                <ResultReveal delay={0.08}>
+                  <CodeBlock label="Example Input" lang="text" code={parsed.exampleInput} />
+                </ResultReveal>
+              )}
+              {parsed.exampleOutput && (
+                <ResultReveal delay={0.14}>
+                  <CodeBlock label="Example Output" lang="text" code={parsed.exampleOutput} />
+                </ResultReveal>
+              )}
+            </div>
+          )}
+
+          {parsed.constraints.length > 0 && (
+            <ResultReveal>
+              <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] p-4">
+                <p className="flex items-center gap-2 text-[11px] uppercase tracking-wide text-gray-500 mb-2">
+                  <Layers className="w-3.5 h-3.5 text-primary-400" /> Constraints
+                </p>
+                <ul className="space-y-1.5">
+                  {parsed.constraints.map((c, i) => (
+                    <li key={i} className="flex items-start gap-2 text-sm text-gray-300">
+                      <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0 text-emerald-400" />
+                      <span className="leading-relaxed">{c}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </ResultReveal>
           )}
-        </div>
+
+          {parsed.starterCode && (
+            <ResultReveal>
+              <CodeBlock label="Starter Code" lang={parsed.starterCode.language} code={parsed.starterCode.code} />
+            </ResultReveal>
+          )}
+
+          {parsed.extra && <AIResponse content={parsed.extra} disableToolbar />}
+        </>
+      ) : (
+        <AIResponse content={text} disableToolbar />
       )}
 
-      {parsed.constraints.length > 0 && (
-        <ResultReveal>
-          <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] p-4">
-            <p className="flex items-center gap-2 text-[11px] uppercase tracking-wide text-gray-500 mb-2">
-              <Layers className="w-3.5 h-3.5 text-primary-400" /> Constraints
-            </p>
-            <ul className="space-y-1.5">
-              {parsed.constraints.map((c, i) => (
-                <li key={i} className="flex items-start gap-2 text-sm text-gray-300">
-                  <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0 text-emerald-400" />
-                  <span className="leading-relaxed">{c}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </ResultReveal>
-      )}
-
-      {parsed.starterCode && (
-        <ResultReveal>
-          <CodeBlock label="Starter Code" lang={parsed.starterCode.language} code={parsed.starterCode.code} />
-        </ResultReveal>
-      )}
-
-      {parsed.extra && <AIResponse content={parsed.extra} disableToolbar />}
+      <ResultReveal delay={0.15}>
+        <ChallengeSimulator language={language} problem={problemText} starterCode={parsed.starterCode?.code || ''} onNext={onNext} />
+      </ResultReveal>
     </div>
   );
 }

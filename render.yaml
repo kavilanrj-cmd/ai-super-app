@@ -21,6 +21,11 @@ services:
         value: "3.12.6"
       - key: DEBUG
         value: "false"
+      # Model names (not secrets) - keep in sync with .env.example.
+      - key: GROQ_MODEL
+        value: "qwen/qwen3.8-27b"
+      - key: GROQ_VISION_MODEL
+        value: "qwen/qwen3.8-27b"
       # Set these in the Render dashboard (never commit secrets):
       - key: DATABASE_URL
         sync: false
@@ -31,7 +36,7 @@ services:
       - key: OPENAI_API_KEY
         sync: false
       - key: FRONTEND_URL
-        sync: false
+        value: "https://ai-super-app-plum.vercel.app"
       - key: CORS_ORIGINS
         sync: false
       - key: ADMIN_EMAIL

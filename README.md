@@ -179,14 +179,14 @@ A comprehensive AI-powered platform featuring 11 specialized AI agents, real-tim
 - Notification preferences
 - AI model selection
 
-### 26. 🚀 AI App Builder (Local)
+### 26. 🚀 AI App Builder
 - Generate a full multi-file app from a single natural-language prompt
 - Iterate on a project via chat until it matches your idea
 - Build / repair cycle that auto-fixes npm errors (up to `APP_BUILDER_MAX_REPAIRS` rounds)
 - Live preview server per project, with start / stop / restart controls
 - File explorer + editor to inspect and tweak generated source
 - Download the project as a ZIP, or duplicate / rename / delete projects
-- Runs **100% locally** through Ollama (`qwen3:8b` default) — no API key required
+- Runs on **Groq by default** (`APP_BUILDER_PROVIDER=groq`) — reuses `GROQ_API_KEY`, no local LLM required, works on low-spec laptops. **Ollama** remains available as an optional local/offline provider
 
 ---
 
@@ -222,8 +222,8 @@ What each technology is used for in this project.
 | **SQLAlchemy 2 (async) + Alembic** | ORM, database models and migrations |
 | **Pydantic v2** | Request/response schemas & validation |
 | **CrewAI + LangGraph + LangChain** | Multi-agent orchestration (11 specialized agents) |
-| **Groq (qwen3 models)** | Primary LLM inference — chat, agents, career tools, documents, image describe, TTS |
-| **Ollama (qwen3:8b)** | Local LLM for the AI App Builder (no API key, fully offline) |
+| **Groq (qwen3 models)** | Primary LLM inference — chat, agents, career tools, documents, image describe, TTS, and the AI App Builder default |
+| **Ollama (qwen3:8b)** | Optional local LLM provider for the AI App Builder (no API key, fully offline) |
 | **ChromaDB + FAISS + sentence-transformers** | Vector store & embeddings for PDF Chat / RAG |
 | **pdfplumber / PyPDF2** | PDF text extraction |
 | **pytesseract + Pillow** | OCR (image → text) |
@@ -265,7 +265,7 @@ What each technology is used for in this project.
 - Node.js 18+
 - npm or yarn
 - Git
-- **Ollama** (only for the AI App Builder) — install from <https://ollama.com>, then pull the builder model:
+- **No local LLM required** — the App Builder uses **Groq** by default (set `GROQ_API_KEY`). Ollama (optional, local/offline only) — install from <https://ollama.com>, then pull the builder model:
   ```powershell
   ollama pull qwen3:8b
   ```
@@ -300,8 +300,16 @@ SECRET_KEY=<a-long-random-string>
 GROQ_API_KEY=<your-key>    # or OPENAI_API_KEY=sk-...
 ```
 
-Optional — the **AI App Builder** runs on the local Ollama model you pulled above
-(no key needed). Leave these defaults if using `qwen3:8b` at `localhost:11434`:
+Optional — the **AI App Builder** uses the **Groq** provider by default (the
+same `GROQ_API_KEY` above), so no local model is needed:
+
+```env
+APP_BUILDER_PROVIDER=groq
+```
+
+To use **Ollama** as a local/offline provider instead, set it explicitly
+(`APP_BUILDER_PROVIDER=ollama`), or let an unavailable Groq fall back to it
+with `APP_BUILDER_OLLAMA_FALLBACK=true`:
 
 ```env
 APP_BUILDER_PROVIDER=ollama
@@ -309,8 +317,8 @@ OLLAMA_BASE_URL=http://localhost:11434
 OLLAMA_MODEL=qwen3:8b
 ```
 
-If you did **not** install Ollama and want the App Builder to fall back to Groq
-instead, add `APP_BUILDER_GROQ_FALLBACK=true`.
+If you use the Ollama provider and want it to fall back to Groq when Ollama is
+down, add `APP_BUILDER_GROQ_FALLBACK=true`.
 
 Then run migrations and start the server:
 
@@ -533,7 +541,7 @@ The API is available at `http://localhost:8000/docs` (Swagger UI) or `http://loc
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/v1/app-builder/status` | Ollama/provider status |
+| GET | `/api/v1/app-builder/status` | AI provider status (Groq / Ollama) |
 | GET | `/api/v1/app-builder/projects` | List user projects |
 | POST | `/api/v1/app-builder/generate` | Generate an app from a prompt |
 | POST | `/api/v1/app-builder/{id}/iterate` | Refine a project via chat |
@@ -684,3 +692,42 @@ npm run lint
 - [Ollama](https://ollama.com) for local, key-free inference (AI App Builder)
 
 --
+
+
+
+
+
+
+Run these commands in PowerShell from the project root:
+# Navigate to backend
+cd "R:\Games\projects\super app\super-app\backend"
+
+# Activate Python virtual environment
+.\venv\Scripts\Activate.ps1
+
+# Install dependencies (only needed on first run)
+pip install -r requirements.txt
+
+# Copy environment file if it doesn't exist (only needed on first run)
+if (-Not (Test-Path .env)) {
+  Copy-Item ..\.env.example .env
+}
+
+# Apply database migrations (only needed on first run / when schema changes)
+alembic upgrade head
+
+# Start the backend server
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+Backend will run at: http://localhost:8000  
+API docs: http://localhost:8000/docs
+Terminal 2 - Frontend (Next.js)
+Run these commands in a second PowerShell window:
+# Navigate to frontend
+cd "R:\Games\projects\super app\super-app\frontend"
+
+# Install dependencies (only needed on first run)
+npm install
+
+# Start the frontend dev server
+npm run dev
+Frontend will run at: http://localhost:3000

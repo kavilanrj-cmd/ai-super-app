@@ -2,6 +2,7 @@
 const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
 
 const nextConfig = {
+  transpilePackages: ['three'],
   async rewrites() {
     if (!apiUrl) return [];
     const backendOrigin = apiUrl.replace(/\/api\/v1\/?$/, '');

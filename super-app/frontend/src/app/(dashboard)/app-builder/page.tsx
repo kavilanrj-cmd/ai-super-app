@@ -95,7 +95,7 @@ function buildTree(files: ProjectFile[]) {
 }
 
 const STEP_LABELS: Record<string, { label: string; icon: any }> = {
-  planning: { label: 'Planning & writing your app with local AI', icon: Sparkles },
+  planning: { label: 'Planning & writing your app with AI', icon: Sparkles },
   installing: { label: 'Installing dependencies', icon: Boxes },
   building: { label: 'Building the project', icon: Hammer },
   repairing: { label: 'AI is fixing build errors', icon: Cpu },
@@ -178,7 +178,7 @@ export default function AppBuilderPage() {
     appBuilderAPI
       .status()
       .then((res) => setStatus(res.data))
-      .catch(() => setStatus({ ok: false, message: 'Ollama is not running. Start Ollama to use local AI App Builder.' }))
+      .catch(() => setStatus({ ok: false, message: 'AI provider is unavailable. Check the backend configuration and try again.' }))
       .finally(() => setChecking(false));
   }, []);
 
@@ -200,7 +200,17 @@ export default function AppBuilderPage() {
     setLog((prev) => [...prev, line]);
   }, []);
 
-  const ollamaUnavailable = !checking && status && !status.ok;
+  const providerUnavailable = !checking && status && !status.ok;
+  const providerLabel = status?.provider === 'ollama' ? 'Ollama' : 'Groq';
+  const providerReadyText =
+    status?.provider === 'ollama'
+      ? status.model_ready
+        ? 'Local AI ready'
+        : 'Model not pulled'
+      : status?.model_ready
+        ? 'Groq ready'
+        : 'Model not available';
+  const providerHint = status?.provider === 'ollama' ? 'local Ollama · no API token' : 'Groq · fast cloud AI';
 
   const pickTemplate = (t: string) => {
     setPrompt(t);
@@ -307,9 +317,7 @@ export default function AppBuilderPage() {
     } catch (err: any) {
       setStep('error');
       const detail = err?.response?.data?.detail;
-      const msg = detail?.includes('Ollama')
-        ? detail
-        : detail || 'Generation failed. Check that Ollama is running and the model is pulled.';
+      const msg = detail || 'Generation failed. Check that the AI provider is configured and reachable.';
       addMessage('ai', msg, undefined, 'err');
       pushLog(`! ${msg}`);
     }
@@ -576,7 +584,9 @@ export default function AppBuilderPage() {
                 </span>
               )}
             </div>
-            <p className="text-[var(--text-secondary)]">Build websites and apps with local AI</p>
+            <p className="text-[var(--text-secondary)]">
+              Build websites and apps with AI
+            </p>
           </div>
         </div>
 
@@ -624,7 +634,7 @@ export default function AppBuilderPage() {
           {checking ? (
             <span className="ab-status-chip border-white/15 text-white/60">
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              Checking local AI...
+              Checking AI...
             </span>
           ) : status?.ok ? (
             <span
@@ -637,13 +647,13 @@ export default function AppBuilderPage() {
               title={status.message}
             >
               <CircleDot className={cn('w-3.5 h-3.5', status.model_ready ? 'animate-pulse' : '')} />
-              {status.model_ready ? 'Local AI ready' : 'Model not pulled'}
+              {providerReadyText}
               <span className="opacity-80 font-mono text-[11px]">· {status.model}</span>
             </span>
           ) : (
             <span className="ab-status-chip border-red-400/40 text-red-300 bg-red-500/10" title={status?.message}>
               <WifiOff className="w-3.5 h-3.5" />
-              Ollama is not running
+              {providerLabel} unavailable
             </span>
           )}
 
@@ -678,9 +688,9 @@ export default function AppBuilderPage() {
         </div>
       )}
 
-      {/* Ollama unavailable banner */}
+      {/* Provider unavailable banner */}
       <AnimatePresence>
-        {ollamaUnavailable && (
+        {providerUnavailable && (
           <motion.div
             initial={{ opacity: 0, y: -8, height: 0 }}
             animate={{ opacity: 1, y: 0, height: 'auto' }}
@@ -692,11 +702,12 @@ export default function AppBuilderPage() {
                 <WifiOff className="w-4.5 h-4.5" />
               </span>
               <div className="min-w-0 text-[13px] text-gray-300 leading-relaxed">
-                <p className="font-semibold text-red-200">Ollama is not running. Start Ollama to use local AI App Builder.</p>
-                <p className="text-gray-400 mt-1">
-                  {status?.message ||
-                    '1) Install & start Ollama from https://ollama.com · 2) Pull a coding model (e.g. `ollama pull qwen2.5-coder:7b`) · 3) Set OLLAMA_MODEL in .env to match the model you pulled.'}
+                <p className="font-semibold text-red-200">
+                  {status?.provider === 'ollama'
+                    ? 'Ollama is not running. Start Ollama to use the local provider.'
+                    : 'The AI provider is unavailable. Generation cannot start.'}
                 </p>
+                <p className="text-gray-400 mt-1">{status?.message}</p>
               </div>
               <button
                 onClick={() => appBuilderAPI.status().then((r) => setStatus(r.data)).catch(() => {})}
@@ -740,7 +751,7 @@ export default function AppBuilderPage() {
                   </span>
                 ) : (
                   <span className="ab-hint-chip">
-                    <Sparkles className="w-3 h-3" /> local Ollama · no API token
+                    <Sparkles className="w-3 h-3" /> {providerHint}
                   </span>
                 )}
                 <span className="ab-kbd-mini hidden sm:inline">Ctrl+Enter</span>

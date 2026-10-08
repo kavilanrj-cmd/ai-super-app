@@ -13,7 +13,7 @@ from app.schemas.ai import (
     AIChatRequest, CodeExplainRequest, CodeFixRequest, CodeGenerateRequest,
     CodeReviewRequest, SummarizeRequest, TranslateRequest, ResearchRequest,
     CareerRoadmapRequest, InterviewQuestionRequest, SalaryPredictionRequest,
-    CareerChallengeRequest,
+    CareerChallengeRequest, ChallengeEvaluateRequest,
     ImageGenerateRequest, WritingRequest, EmailRequest, EmailImproveRequest,
     MeetingSummaryRequest, BugFinderRequest, RagQueryRequest
 )
@@ -138,8 +138,14 @@ async def generate_interview_questions(req: InterviewQuestionRequest, current_us
         target += f" at {req.company}"
     result = await agent_coordinator.process_with_agent(
         "career",
-        f"Generate {question_types} interview questions for {target} with model answers and tips. "
-        "Number each question (1. 2. 3. ...). After each question line, give an 'Answer:' section and a 'Tip:' section on its own line.",
+        f"Generate exactly 5 {question_types} interview questions for {target} with model answers and tips. "
+        "Use strict plain-text formatting with no bold/italic markers and no intro or outro paragraphs:\n"
+        "1. <question>\n"
+        "Answer: <concise model answer>\n"
+        "Tip: <one interview tip>\n\n"
+        "Repeat the same 1-2-3 pattern for each numbered question. Keep every answer concise (3-5 sentences) "
+        "and every tip to 1-2 sentences so the whole response stays under roughly 600 words and every "
+        "question fits a complete answer.",
     )
     return {"questions": result}
 
@@ -163,6 +169,69 @@ async def generate_coding_challenge(req: CareerChallengeRequest, current_user: U
         "Keep the problem concise and beginner-friendly, and make the starter code a compilable scaffold with function signature.",
     )
     return {"challenge": result}
+
+def _parse_json_object(text: str):
+    """Robustly extract the first JSON object from an LLM response."""
+    import json
+    if not text:
+        return None
+    cleaned = text.strip()
+    if cleaned.startswith("```"):
+        cleaned = cleaned.split("```", 2)[1].strip()
+        if cleaned.startswith("json"):
+            cleaned = cleaned[4:].strip()
+        cleaned = cleaned.rstrip("`").strip()
+    start = cleaned.find("{")
+    end = cleaned.rfind("}")
+    if start == -1 or end == -1 or end <= start:
+        return None
+    try:
+        return json.loads(cleaned[start:end + 1])
+    except Exception:
+        return None
+
+@router.post("/career/challenge/evaluate")
+async def evaluate_challenge_solution(req: ChallengeEvaluateRequest, current_user: User = Depends(get_current_user)):
+    problem = req.problem.strip()
+    starter = req.starter_code.strip()
+    solution = req.solution.strip()
+    if not solution:
+        raise HTTPException(status_code=400, detail="Solution cannot be empty.")
+    if not problem:
+        raise HTTPException(status_code=400, detail="Problem text is required to evaluate a solution.")
+    prompt = (
+        "You are a strict but encouraging technical interviewer evaluating a candidate's solution to a coding challenge.\n\n"
+        f"Language: {req.language}\n"
+        f"Problem:\n{problem}\n"
+    )
+    if starter:
+        prompt += f"\nProvided starter code:\n{starter}\n"
+    prompt += f"\nCandidate's solution:\n{solution}\n\n"
+    prompt += (
+        "Evaluate the solution honestly against the problem requirements. Respond with STRICT JSON only, "
+        "no markdown fences, no commentary before or after. Use exactly this shape:\n"
+        '{"score": <int 0-100>, "verdict": "correct" | "partial" | "incorrect", '
+        '"summary": "<1-3 sentence overall assessment>", '
+        '"correctness": "<does it solve the problem correctly? mention edge cases>", '
+        '"errors": ["<specific issue>", ...], '
+        '"strengths": ["<what was done well>", ...], '
+        '"recommendations": ["<learning recommendation>", ...]}'
+    )
+    result = await agent_coordinator.process_with_agent("coding", prompt)
+    parsed = _parse_json_object(result)
+    if parsed and isinstance(parsed, dict):
+        return {"evaluation": parsed}
+    return {
+        "evaluation": {
+            "score": None,
+            "verdict": "review",
+            "summary": result,
+            "correctness": "",
+            "errors": [],
+            "strengths": [],
+            "recommendations": [],
+        }
+    }
 
 @router.post("/image/generate")
 async def generate_image(req: ImageGenerateRequest, current_user: User = Depends(get_current_user)):

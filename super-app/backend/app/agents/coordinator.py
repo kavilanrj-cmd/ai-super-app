@@ -8,7 +8,7 @@ from app.agents.agents import (
 class AgentCoordinator:
     def __init__(self):
         self.agents = {
-            "resume": ResumeAgent(),
+            "resume": ResumeAgent(max_tokens=950),
             "career": CareerAgent(max_tokens=950),
             "research": ResearchAgent(),
             "coding": CodingAgent(max_tokens=950),

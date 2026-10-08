@@ -361,8 +361,8 @@ export default function JobsPage() {
   const [selected, setSelected] = useState<Job | null>(null);
   const [savedIds, setSavedIds] = useState<Set<number>>(new Set());
 
-  const buildParams = (page: number) => ({
-    query,
+  const buildParams = (page: number, q?: string) => ({
+    query: q?.trim() || query,
     location: location.trim() || undefined,
     remote,
     job_type: jobType || undefined,
@@ -373,10 +373,10 @@ export default function JobsPage() {
     limit: 12,
   });
 
-  const runSearch = async (page: number) => {
+  const runSearch = async (page: number, q?: string) => {
     setSearchError(null);
     try {
-      const res = await jobAPI.search(buildParams(page));
+      const res = await jobAPI.search(buildParams(page, q));
       const data = res.data as { jobs: Job[]; total: number; page: number; limit: number; has_more: boolean; providers: string[] };
       setJobs((prev) => (page === 1 ? data.jobs : [...prev, ...data.jobs]));
       setMeta({
@@ -424,34 +424,44 @@ export default function JobsPage() {
     }
   };
 
+  const RESUME_SKILL_NOISE = new Set(['html', 'css', 'excel', 'git']);
+
   const onResumeSearch = async () => {
     setResumeLoading(true);
     try {
       const res = await resumeAPI.history();
       const items: any[] = res.data || [];
       if (!items.length) {
-        toast.error('No resume analysis found. Upload a resume to enable this.');
+        toast.error('No resume found. Upload a resume in the Resume section first, then try again.');
         return;
       }
       const latest = items[0];
-      const prefilled = (latest.title || '').trim();
-      if (prefilled) {
-        setQuery(prefilled);
-        setLocation('');
-        setRemote('all');
-        setExperience('');
-        setJobType('');
-        setSalaryMin('');
-        setSalaryMax('');
+      const role = (latest.job_role || '').trim();
+      const skills: string[] = Array.isArray(latest.skills_found)
+        ? latest.skills_found.filter((s: any) => typeof s === 'string')
+        : [];
+      const roleL = role.toLowerCase();
+      const keywords = skills
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .filter((s) => !RESUME_SKILL_NOISE.has(s.toLowerCase()))
+        .filter((s) => !roleL.includes(s.toLowerCase()))
+        .slice(0, 3);
+      const built = [role, ...keywords].filter(Boolean).join(' ');
+      if (built) {
+        setQuery(built);
         setLoading(true);
         try {
-          await runSearch(1);
-          toast.success(`Searching based on your profile: ${prefilled}`);
+          await runSearch(1, built);
+          toast.success(`Searching with your resume profile: ${built}`);
         } finally {
           setLoading(false);
         }
+      } else if (query.trim()) {
+        await runSearch(1);
+        toast.success('Searching with your resume profile.');
       } else {
-        toast('No job title found in your resume. Fill the search box and press Search Jobs.');
+        toast('No job role detected in your resume. Enter a job title above and press Search Jobs.');
       }
     } catch {
       toast.error('Could not load your resume data.');
@@ -543,7 +553,7 @@ export default function JobsPage() {
             <div className="flex gap-2">
               <Button variant="outline" onClick={onResumeSearch} loading={resumeLoading} className="shrink-0">
                 {!resumeLoading && <GraduationCap className="w-4 h-4" />}
-                Search from my resume
+                Search with my resume
               </Button>
               <Button onClick={onSubmit} loading={loading} className="shrink-0">
                 {!loading && <Search className="w-4 h-4" />}

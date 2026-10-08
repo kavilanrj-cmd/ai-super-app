@@ -2,12 +2,13 @@ from typing import Optional
 from app.agents.base_agent import BaseAgent
 
 class ResumeAgent(BaseAgent):
-    def __init__(self):
+    def __init__(self, max_tokens: Optional[int] = None):
         super().__init__(
             name="Resume Expert",
             role="Resume Analysis Specialist",
             goal="Analyze resumes and provide ATS scores, improvement suggestions, and keyword analysis",
-            backstory="Expert resume analyst with 15 years of HR tech experience. Specializes in ATS optimization and career coaching."
+            backstory="Expert resume analyst with 15 years of HR tech experience. Specializes in ATS optimization and career coaching.",
+            max_tokens=max_tokens
         )
 
 class CareerAgent(BaseAgent):

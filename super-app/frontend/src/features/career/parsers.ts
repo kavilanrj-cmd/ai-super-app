@@ -188,9 +188,9 @@ export interface InterviewParse {
   extra: string;
 }
 
-const QA_QUESTION_RE = /^\s*(?:q\.?\s*\d*\s*[):.\-]\s*|\d+\s*[.):]\s*)(.+)$/i;
-const QA_ANSWER_RE = /^\s*(?:model\s*answer|answer|a)\s*[:：]\s*(.*)$/i;
-const QA_TIP_RE = /^\s*(?:tip|hint|key\s*tip|pro\s*tip)\s*[:：]?\s*(.*)$/i;
+const QA_QUESTION_RE = /^\s*(?:\*{1,2}\s*)?(?:(?:q(?:uestion)?\.?\s*\d*\s*[):.\-]\s*|\d+\s*[.):]\s*)(.+)$)/i;
+const QA_ANSWER_RE = /^\s*(?:\*{1,2}\s*)?(?:model\s*answer|answer|a)\s*[:：]\s*(.*)$/i;
+const QA_TIP_RE = /^\s*(?:\*{1,2}\s*)?(?:tip|hint|key\s*tip|pro\s*tip)\s*[:：]?\s*(.*)$/i;
 
 export function parseInterview(raw: string): InterviewParse {
   const lines = raw.split(/\r?\n/).map((l) => l.trim());
@@ -222,15 +222,15 @@ export function parseInterview(raw: string): InterviewParse {
       continue;
     }
     const am = QA_ANSWER_RE.exec(line);
-    if (am && am[0].length < 200) {
+    if (am) {
       mode = 'answer';
-      cur.answer += (am[1] || '').trim() ? ` ${trimLoose(am[1])}` : '';
+      cur.answer += trimLoose(am[1] || '').length ? ` ${trimLoose(am[1])}` : '';
       continue;
     }
     const tm = QA_TIP_RE.exec(line);
-    if (tm && tm[0].length < 120) {
+    if (tm) {
       mode = 'tip';
-      cur.tip += (tm[1] || '').trim() ? ` ${trimLoose(tm[1])}` : '';
+      cur.tip += trimLoose(tm[1] || '').length ? ` ${trimLoose(tm[1])}` : '';
       continue;
     }
     if (mode === 'answer') {

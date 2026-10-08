@@ -1,397 +1,69 @@
 'use client';
 
-import { useEffect, useMemo } from 'react';
-import Link from 'next/link';
-import { motion } from 'framer-motion';
+import { useEffect } from 'react';
 import { useAuth } from '@/lib/hooks';
-import { PARTICLES, makeParticles } from '@/lib/particles';
-import {
-  Sparkles, MessageSquare, FileText, Code, Briefcase, PenTool, Brain,
-  Bot, Stethoscope, DollarSign, Languages, BookOpen, Image, ListChecks,
-  ArrowRight, ArrowUpRight, Wand2, Zap, Shield, Flame, Github, Twitter,
-} from 'lucide-react';
-
-const features = [
-  { icon: MessageSquare, title: 'AI Chat', desc: 'Conversational AI with smooth, real-time streaming responses.', gradient: 'from-blue-500 to-cyan-500', path: '/chat' },
-  { icon: FileText, title: 'Resume Analysis', desc: 'ATS scoring, skill extraction and job-match insights in seconds.', gradient: 'from-purple-500 to-pink-500', path: '/resume' },
-  { icon: Code, title: 'Code Review', desc: 'Bug detection, security checks and optimization suggestions.', gradient: 'from-violet-500 to-indigo-500', path: '/code-review' },
-  { icon: Briefcase, title: 'Career Planning', desc: 'Roadmaps, mock interviews and real salary intelligence.', gradient: 'from-emerald-500 to-teal-500', path: '/career' },
-  { icon: PenTool, title: 'Document Studio', desc: 'Emails, cover letters and long-form writing, generated for you.', gradient: 'from-pink-500 to-rose-500', path: '/documents' },
-  { icon: Brain, title: 'Research Agent', desc: 'Deep-dive research and crisp summaries on any topic.', gradient: 'from-amber-500 to-orange-500', path: '/research' },
-];
-
-const agents = [
-  { icon: Bot, label: 'Resume' },
-  { icon: Briefcase, label: 'Career' },
-  { icon: Code, label: 'Coding' },
-  { icon: Brain, label: 'Research' },
-  { icon: Stethoscope, label: 'Medical' },
-  { icon: DollarSign, label: 'Finance' },
-  { icon: Languages, label: 'Translate' },
-  { icon: BookOpen, label: 'Summarize' },
-  { icon: PenTool, label: 'Document' },
-  { icon: Image, label: 'Vision' },
-  { icon: ListChecks, label: 'Planning' },
-];
-
-const heroStats = [
-  { icon: Zap, value: 'Real-time', label: 'Streaming responses' },
-  { icon: Brain, value: '11', label: 'Specialized AI agents' },
-  { icon: Shield, value: 'Private', label: 'By default' },
-];
-
-function FloatingParticles({ count = 40 }) {
-  const particles = useMemo(
-    () => (count === PARTICLES.length ? PARTICLES : makeParticles(count)),
-    [count]
-  );
-
-  return (
-    <div className="fixed inset-0 overflow-hidden pointer-events-none">
-      {particles.map((p) => (
-        <motion.div
-          key={p.id}
-          className="absolute rounded-full bg-white"
-          style={{
-            left: `${p.x}%`,
-            top: `${p.y}%`,
-            width: p.size,
-            height: p.size,
-            opacity: p.opacity,
-          }}
-          animate={{
-            y: [0, -40, 0],
-            opacity: [p.opacity, p.opacity * 2.5, p.opacity],
-          }}
-          transition={{
-            duration: p.duration,
-            repeat: Infinity,
-            delay: p.delay,
-            ease: 'easeInOut',
-          }}
-        />
-      ))}
-    </div>
-  );
-}
+import LenisProvider from '@/components/cinematic/LenisProvider';
+import CursorGlow from '@/components/cinematic/CursorGlow';
+import CinematicNavbar from '@/components/cinematic/CinematicNavbar';
+import CinematicHero from '@/components/cinematic/CinematicHero';
+import AIWorkspace from '@/components/cinematic/AIWorkspace';
+import AppBuilderShowcase from '@/components/cinematic/AppBuilderShowcase';
+import CareerSection from '@/components/cinematic/CareerSection';
+import DocumentIntelligence from '@/components/cinematic/DocumentIntelligence';
+import CreativeAI from '@/components/cinematic/CreativeAI';
+import AgentNetwork from '@/components/cinematic/AgentNetwork';
+import StatsSection from '@/components/cinematic/StatsSection';
+import FinalCTA from '@/components/cinematic/FinalCTA';
+import CinematicFooter from '@/components/cinematic/CinematicFooter';
 
 export default function Home() {
-  const { user, loadUser } = useAuth();
+  const { loadUser } = useAuth();
 
   useEffect(() => {
     loadUser();
   }, [loadUser]);
 
   return (
-    <div className="relative min-h-screen bg-[#050508] overflow-hidden">
-      <FloatingParticles />
+    <LenisProvider>
+      <div className="relative min-h-screen bg-[#030308] text-white overflow-x-hidden selection:bg-primary-500/30 selection:text-white">
+        {/* Ambient subtle cursor glow */}
+        <CursorGlow />
 
-      {/* Ambient background */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-1/4 -left-1/4 w-[500px] h-[500px] bg-primary-500/10 rounded-full blur-[120px] animate-pulse" />
-        <div className="absolute top-1/3 -right-1/4 w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[120px] animate-pulse" style={{ animationDelay: '1s' }} />
-        <div className="absolute -bottom-1/3 left-1/4 w-[500px] h-[500px] bg-fuchsia-500/10 rounded-full blur-[120px] animate-pulse" style={{ animationDelay: '2s' }} />
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wMyI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iMSIvPjwvZz48L2c+PC9zdmc+')] opacity-40" />
+        {/* Cinematic sticky dynamic navbar */}
+        <CinematicNavbar />
+
+        <main className="relative z-10 w-full">
+          {/* SECTION 1 — HERO with React Three Fiber AI Core */}
+          <CinematicHero />
+
+          {/* SECTION 2 — AI WORKSPACE (Central Console & Modules) */}
+          <AIWorkspace />
+
+          {/* SECTION 3 — APP BUILDER (The Flagship Experience) */}
+          <AppBuilderShowcase />
+
+          {/* SECTION 4 — CAREER INTELLIGENCE (End-to-End Workflow) */}
+          <CareerSection />
+
+          {/* SECTION 5 — DOCUMENT INTELLIGENCE (Visual RAG Pipeline) */}
+          <DocumentIntelligence />
+
+          {/* SECTION 6 — CREATIVE + DEVELOPER AI (3D Tilt Gallery) */}
+          <CreativeAI />
+
+          {/* SECTION 7 — AI AGENT NETWORK (Full-Screen Neural Mesh) */}
+          <AgentNetwork />
+
+          {/* SECTION 8 — STATISTICS (Animated Full-Width Strip) */}
+          <StatsSection />
+
+          {/* SECTION 9 — FINAL CTA (Dramatic Conclusion) */}
+          <FinalCTA />
+        </main>
+
+        {/* Global Cinematic Footer */}
+        <CinematicFooter />
       </div>
-
-      {/* Navbar */}
-      <header className="sticky top-0 z-30 w-full backdrop-blur-xl bg-[#050508]/80 border-b border-white/[0.06]">
-        <div className="mx-auto w-full max-w-7xl px-4 sm:px-8 h-16 sm:h-[72px] flex items-center justify-between gap-4">
-          <Link href="/" className="flex items-center gap-3 group shrink-0">
-            <motion.div
-              initial={{ scale: 0, rotate: -180 }}
-              animate={{ scale: 1, rotate: 0 }}
-              transition={{ type: 'spring', stiffness: 200, damping: 15 }}
-              className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center shadow-lg shadow-primary-500/25 group-hover:shadow-glow transition-shadow"
-            >
-              <Sparkles className="w-6 h-6 text-white" />
-            </motion.div>
-            <span className="hidden sm:block text-xl font-bold text-white tracking-tight">AI Super App</span>
-          </Link>
-
-          <motion.nav
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.15 }}
-            aria-label="Primary"
-            className="hidden md:flex items-center gap-1"
-          >
-            <a href="#features" className="px-4 py-2 rounded-lg text-[15px] font-medium text-gray-300 hover:text-white hover:bg-white/5 transition-colors">Features</a>
-            <a href="#agents" className="px-4 py-2 rounded-lg text-[15px] font-medium text-gray-300 hover:text-white hover:bg-white/5 transition-colors">Agents</a>
-            <a href="#cta" className="px-4 py-2 rounded-lg text-[15px] font-medium text-gray-300 hover:text-white hover:bg-white/5 transition-colors">Pricing</a>
-          </motion.nav>
-
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="flex items-center gap-3"
-          >
-            {user ? (
-              <Link href="/dashboard" className="btn-primary inline-flex items-center gap-2">
-                Open Dashboard <ArrowRight className="w-4 h-4" />
-              </Link>
-            ) : (
-              <>
-                <Link href="/login" className="hidden sm:inline-flex btn-secondary">
-                  Sign In
-                </Link>
-                <Link href="/login" className="btn-primary inline-flex items-center gap-2">
-                  Get Started <ArrowRight className="w-4 h-4" />
-                </Link>
-              </>
-            )}
-          </motion.div>
-        </div>
-      </header>
-
-      <main className="relative z-10 mx-auto w-full max-w-7xl px-4 sm:px-8">
-        {/* Hero */}
-        <section className="relative pt-16 sm:pt-24 lg:pt-28 pb-20 sm:pb-28 text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.6 }}
-            className="flex justify-center mb-8"
-          >
-            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/[0.05] border border-white/[0.1] text-sm text-primary-200 backdrop-blur-sm">
-              <Flame className="w-4 h-4 text-orange-400" />
-              One workspace for every AI task
-            </span>
-          </motion.div>
-
-          <motion.h1
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3, duration: 0.7, ease: 'easeOut' }}
-            className="text-5xl sm:text-6xl md:text-7xl lg:text-[5rem] font-extrabold tracking-tight leading-[1.04] text-white"
-          >
-            One workspace.
-            <br />
-            <span className="gradient-text-animated">Every AI tool.</span>
-          </motion.h1>
-
-          <motion.p
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4, duration: 0.7 }}
-            className="text-gray-400 text-lg sm:text-xl lg:text-2xl max-w-2xl mx-auto mt-6 sm:mt-8 leading-relaxed"
-          >
-            Chat, code, plan your career, generate documents and more — powered by 11 specialized
-            AI agents in one beautiful workspace.
-          </motion.p>
-
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5, duration: 0.7 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-10 sm:mt-12"
-          >
-            <Link href="/login" className="btn-primary inline-flex items-center gap-2 w-full sm:w-auto justify-center py-4 px-10 text-base sm:text-lg">
-              Get Started Free <ArrowRight className="w-5 h-5" />
-            </Link>
-            <a href="#features" className="btn-secondary inline-flex items-center gap-2 w-full sm:w-auto justify-center py-4 px-10 text-base sm:text-lg">
-              Explore Features <ArrowUpRight className="w-5 h-5" />
-            </a>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6, duration: 0.7 }}
-            className="flex flex-wrap items-center justify-center gap-3 mt-12 sm:mt-14 max-w-2xl mx-auto"
-          >
-            {heroStats.map((s) => (
-              <div key={s.label} className="glass px-5 py-3 rounded-2xl flex items-center gap-3">
-                <s.icon className="w-5 h-5 text-primary-400" />
-                <span className="text-[15px] text-gray-300">
-                  <span className="font-semibold text-white">{s.value}</span> {s.label}
-                </span>
-              </div>
-            ))}
-          </motion.div>
-        </section>
-
-        {/* Hero mock chat */}
-        <motion.div
-          initial={{ opacity: 0, y: 32 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.7, duration: 0.8, ease: 'easeOut' }}
-          className="relative max-w-3xl mx-auto"
-        >
-          <div className="absolute -inset-6 bg-gradient-to-r from-primary-500/15 via-fuchsia-500/10 to-purple-500/15 rounded-[40px] blur-2xl pointer-events-none" />
-          <div className="relative glass-card overflow-hidden text-left shadow-2xl shadow-primary-500/10">
-            <div className="flex items-center gap-2 px-4 sm:px-5 py-3.5 border-b border-white/[0.06] bg-white/[0.02]">
-              <span className="w-2.5 h-2.5 rounded-full bg-red-500/70" />
-              <span className="w-2.5 h-2.5 rounded-full bg-amber-500/70" />
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/70" />
-              <span className="ml-3 text-sm text-gray-400 font-mono hidden sm:block">AI Assistant — Groq (LLaMA 70B)</span>
-            </div>
-            <div className="p-5 sm:p-7 space-y-4">
-              <div className="flex justify-end">
-                <div className="max-w-[75%] rounded-2xl rounded-tr-sm bg-gradient-to-br from-primary-500/20 to-violet-500/20 border border-primary-500/25 px-5 py-3 text-[15px] text-gray-200">
-                  Draft a product launch email and a cover letter for a senior React role.
-                </div>
-              </div>
-              <div className="flex justify-start">
-                <div className="max-w-[80%] rounded-2xl rounded-tl-sm bg-white/[0.04] border border-white/[0.06] px-5 py-3.5 text-[15px] text-gray-300 space-y-1.5">
-                  <p>Done! I&apos;ve generated both documents and saved them to your workspace.</p>
-                  <p className="text-sm text-gray-500">Email subject: &quot;Excited to launch what we built&quot; · 1,240 words</p>
-                </div>
-              </div>
-              <div className="flex justify-start items-center">
-                <div className="rounded-2xl rounded-tl-sm bg-white/[0.04] border border-white/[0.06] px-5 py-3 text-[15px] text-gray-300">
-                  Scanning resume for ATS insights<span className="streaming-cursor" />
-                </div>
-              </div>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Features */}
-        <section id="features" className="py-20 sm:py-28 scroll-mt-24">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="text-center max-w-2xl mx-auto mb-12 sm:mb-16"
-          >
-            <p className="text-sm font-semibold text-primary-400 uppercase tracking-[0.2em] mb-4">Everything you need</p>
-            <h2 className="section-title text-white">
-              Built for <span className="gradient-text">every workflow</span>
-            </h2>
-            <p className="text-gray-400 text-lg mt-4 leading-relaxed">
-              From quick chats to deep research — a full toolkit of AI superpowers, ready in seconds.
-            </p>
-          </motion.div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
-            {features.map((feature, i) => (
-              <motion.div
-                key={feature.title}
-                initial={{ opacity: 0, y: 28 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.08, duration: 0.5, ease: 'easeOut' }}
-                className="glass-card p-7 group relative overflow-hidden flex flex-col"
-              >
-                <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${feature.gradient} flex items-center justify-center mb-5 shadow-lg transition-all duration-300 group-hover:scale-110 group-hover:rotate-3`}>
-                  <feature.icon className="w-7 h-7 text-white" />
-                </div>
-                <h3 className="card-title text-gray-100">{feature.title}</h3>
-                <p className="text-[15px] text-gray-400 mt-2 leading-relaxed flex-1">{feature.desc}</p>
-                <Link
-                  href={feature.path}
-                  className="inline-flex items-center gap-2 mt-5 text-[15px] font-semibold text-primary-400 group-hover:text-primary-300 transition-colors"
-                >
-                  Learn more <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-                </Link>
-                <span className="absolute top-0 right-0 w-28 h-28 bg-gradient-to-br from-primary-500/10 to-transparent rounded-full blur-2xl -mr-8 -mt-8 transition-opacity opacity-0 group-hover:opacity-100" />
-              </motion.div>
-            ))}
-          </div>
-        </section>
-
-        {/* Agents */}
-        <section id="agents" className="py-12 sm:py-20 scroll-mt-24">
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="relative overflow-hidden gradient-border glass-card p-8 sm:p-12 lg:p-14"
-          >
-            <div className="absolute -top-20 -right-20 w-72 h-72 bg-primary-500/10 rounded-full blur-[100px]" />
-            <div className="absolute -bottom-20 -left-20 w-72 h-72 bg-fuchsia-500/10 rounded-full blur-[100px]" />
-            <div className="relative z-10 flex flex-col lg:flex-row lg:items-center gap-10 lg:gap-14">
-              <div className="lg:max-w-md shrink-0">
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary-500 to-fuchsia-500 flex items-center justify-center shadow-glow-sm mb-6">
-                  <Wand2 className="w-7 h-7 text-white" />
-                </div>
-                <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-white">
-                  11 specialized <span className="gradient-text">AI agents</span>
-                </h2>
-                <p className="text-gray-400 mt-4 text-base sm:text-lg leading-relaxed">
-                  Each agent is fine-tuned for its domain — resume screening, career roadmaps, coding,
-                  medical guidance, finance, translation and more.
-                </p>
-                <Link href="/login" className="btn-primary inline-flex items-center gap-2 mt-8">
-                  Meet the agents <ArrowRight className="w-4 h-4" />
-                </Link>
-              </div>
-              <div className="flex-1">
-                <div className="flex flex-wrap gap-3">
-                  {agents.map((agent, i) => (
-                    <motion.span
-                      key={agent.label}
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      whileInView={{ opacity: 1, scale: 1 }}
-                      viewport={{ once: true }}
-                      transition={{ delay: 0.2 + i * 0.05 }}
-                      className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-white/[0.05] border border-white/[0.09] text-sm sm:text-[15px] text-gray-300 hover:border-primary-500/40 hover:text-white transition-colors"
-                    >
-                      <agent.icon className="w-4 h-4 text-primary-400" />
-                      {agent.label}
-                    </motion.span>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        </section>
-
-        {/* CTA */}
-        <section id="cta" className="py-12 sm:py-20 scroll-mt-24">
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="relative overflow-hidden rounded-3xl animated-gradient-bg border border-primary-500/20 p-10 sm:p-14 lg:p-20 text-center"
-          >
-            <div className="absolute top-0 right-0 w-64 h-64 bg-primary-500/15 rounded-full blur-[100px]" />
-            <div className="absolute bottom-0 left-0 w-64 h-64 bg-fuchsia-500/10 rounded-full blur-[100px]" />
-            <div className="relative z-10">
-              <h2 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white">
-                Start building <span className="gradient-text-animated">something amazing</span>
-              </h2>
-              <p className="text-gray-300 text-lg sm:text-xl mt-5 max-w-xl mx-auto leading-relaxed">
-                Free 500 AI credits to get started. No credit card required.
-              </p>
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-10">
-                <Link href="/login" className="btn-primary inline-flex items-center gap-2 w-full sm:w-auto justify-center py-4 px-10 text-base sm:text-lg">
-                  Create Free Account <ArrowRight className="w-5 h-5" />
-                </Link>
-                <Link href="/dashboard" className="btn-secondary inline-flex items-center gap-2 w-full sm:w-auto justify-center py-4 px-10 text-base sm:text-lg">
-                  Go to Dashboard
-                </Link>
-              </div>
-            </div>
-          </motion.div>
-        </section>
-      </main>
-
-      {/* Footer */}
-      <footer className="relative z-10 border-t border-white/[0.06] mt-8 sm:mt-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-10 flex flex-col sm:flex-row items-center justify-between gap-5">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center">
-              <Sparkles className="w-5 h-5 text-white" />
-            </div>
-            <span className="text-base font-semibold text-gray-300">AI Super App</span>
-            <span className="text-sm text-gray-600 hidden sm:inline">© {new Date().getFullYear()}</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <a href="#" className="text-gray-500 hover:text-white transition-colors" aria-label="GitHub">
-              <Github className="w-5 h-5" />
-            </a>
-            <a href="#" className="text-gray-500 hover:text-white transition-colors" aria-label="Twitter">
-              <Twitter className="w-5 h-5" />
-            </a>
-          </div>
-        </div>
-      </footer>
-    </div>
+    </LenisProvider>
   );
 }

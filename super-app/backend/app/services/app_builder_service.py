@@ -2,8 +2,8 @@
 
 Lovable-style local app generation:
 
-    Next.js frontend  ->  FastAPI backend  ->  Ollama (local model ONLY)
-                            ^
+    Next.js frontend  ->  FastAPI backend  ->  LLM provider (Groq by default,
+                            ^                     local Ollama optional)
                             +-- sandboxed workspace + safe build/preview
 
 Responsibilities
@@ -68,7 +68,7 @@ WINDOWS = os.name == "nt"
 
 
 class AppBuilderError(RuntimeError):
-    """Expected, user-facing failure (bad input, unreachable Ollama, ...)."""
+    """Expected, user-facing failure (bad input, unreachable provider, ...)."""
 
 
 def _npm_pieces(command: str, *args: str) -> List[str]:
@@ -402,7 +402,7 @@ class _Agents:
             "Each entry must contain the FULL new content of a file. If no change is needed, "
             'return {"message": "...", "files": []}.'
         )
-        raw = await self.provider.chat(system, context, json_mode=True, temperature=0.2, max_tokens=10000)
+        raw = await self.provider.chat(system, context, json_mode=True, temperature=0.2, max_tokens=3000)
         return _extract_json(raw)
 
     async def debugger(self, errors: str, context: str) -> Dict[str, Any]:
@@ -418,7 +418,7 @@ class _Agents:
         )
         raw = await self.provider.chat(
             system, f"BUILD ERRORS:\n{errors}\n\nPROJECT CONTEXT:\n{context}",
-            json_mode=True, temperature=0.1, max_tokens=10000,
+            json_mode=True, temperature=0.1, max_tokens=3000,
         )
         return _extract_json(raw)
 
@@ -488,11 +488,11 @@ class AppBuilderService:
 
     # -- LLM helpers ------------------------------------------------------
 
-    async def _provider(self) -> AIProvider:
-        return await app_builder_ai_client.provider()
+    async def _provider(self, *, fresh: bool = False) -> AIProvider:
+        return await app_builder_ai_client.provider(fresh=fresh)
 
     async def check_status(self) -> Dict[str, Any]:
-        status = await (await self._provider()).check()
+        status = await (await self._provider(fresh=True)).check()
         status["workspace"] = self._ensure_workspace().as_posix()
         status["projects_count"] = len(self.list_projects())
         return status

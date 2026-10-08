@@ -472,7 +472,9 @@ export default function CareerPage() {
                     {mode === 'roadmap' && <RoadmapView text={results[mode]!} />}
                     {mode === 'interview' && <InterviewView text={results[mode]!} />}
                     {mode === 'salary' && <SalaryView text={results[mode]!} label={salaryLabel} />}
-                    {mode === 'challenges' && <ChallengeView text={results[mode]!} />}
+                    {mode === 'challenges' && (
+                      <ChallengeView text={results[mode]!} language={chLanguage} onNext={() => generate('challenges')} />
+                    )}
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center min-h-[320px] h-full text-center">

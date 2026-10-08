@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/lib/hooks';
@@ -62,6 +62,20 @@ export default function LoginPage() {
   const { login, register } = useAuth();
   const router = useRouter();
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('mode') === 'register' || window.location.pathname === '/register') {
+        setIsLogin(false);
+      }
+      const token = localStorage.getItem('access_token');
+      if (token) {
+        const redirectUrl = params.get('redirect') || '/dashboard';
+        window.location.href = redirectUrl;
+      }
+    }
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -73,7 +87,9 @@ export default function LoginPage() {
         await register({ email, username, password, full_name: fullName });
         toast.success('Account created successfully!');
       }
-      router.push('/dashboard');
+      const redirectUrl =
+        new URLSearchParams(window.location.search).get('redirect') || '/dashboard';
+      window.location.href = redirectUrl;
     } catch (err: any) {
       const detail = err.response?.data?.detail;
       if (detail) {

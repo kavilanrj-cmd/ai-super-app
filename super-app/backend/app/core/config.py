@@ -91,7 +91,7 @@ class Settings(BaseSettings):
     RATE_LIMIT_WINDOW: int = 60
 
     CORS_ORIGINS: Any = []
-    FRONTEND_URL: Optional[str] = os.getenv("FRONTEND_URL")
+    FRONTEND_URL: Optional[str] = os.getenv("FRONTEND_URL", "https://ai-super-app-plum.vercel.app")
     ADMIN_EMAIL: str = os.getenv("ADMIN_EMAIL", "admin@superapp.ai")
     ADMIN_PASSWORD: str = os.getenv("ADMIN_PASSWORD", "Admin@123")
 
@@ -126,6 +126,9 @@ class Settings(BaseSettings):
         origins = list(self.CORS_ORIGINS or [])
         if self.FRONTEND_URL and self.FRONTEND_URL not in origins:
             origins.append(self.FRONTEND_URL)
+        default_prod = "https://ai-super-app-plum.vercel.app"
+        if default_prod not in origins:
+            origins.append(default_prod)
         if self.DEBUG:
             # Always allow local development frontend origins (both 3000 and
             # 3001) while DEBUG is on, regardless of the .env CORS_ORIGINS.
@@ -153,7 +156,13 @@ class Settings(BaseSettings):
     def validate_production_security(self):
         insecure_keys = ("super-secret-key-change-in-production", "change-this-to-a-random-secret-key")
         if not self.DEBUG and self.SECRET_KEY in insecure_keys:
-            raise ValueError("SECRET_KEY must be set to a strong random value when DEBUG=False")
+            import secrets
+            import logging
+            logging.getLogger("uvicorn.error").warning(
+                "SECRET_KEY not set in production; generated a secure temporary key. "
+                "Set SECRET_KEY in your deployment environment variables for session persistence across restarts."
+            )
+            self.SECRET_KEY = secrets.token_urlsafe(64)
         return self
 
     @property

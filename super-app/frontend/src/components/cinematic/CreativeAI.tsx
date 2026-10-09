@@ -4,25 +4,12 @@ import React from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import {
-  Image as ImageIcon, Search, Code, Bug, ArrowUpRight,
+  Search, Code, Bug, ArrowUpRight,
   Sparkles, Terminal, Shield, Zap, Eye, Cpu
 } from 'lucide-react';
 import TiltCard from './TiltCard';
 
 const CREATIVE_TOOLS = [
-  {
-    id: 'image-ai',
-    title: 'Image AI Studio',
-    subtitle: 'Next-Gen Visual Synthesis',
-    description:
-      'Generate production-grade photorealistic renders, UI design concepts, and vectors directly from descriptive natural language.',
-    route: '/image-ai',
-    icon: ImageIcon,
-    accent: 'from-pink-500 via-purple-500 to-indigo-500',
-    stat: '4K Ultra-Res',
-    tag: 'Diffusion Engine',
-    features: ['Custom aspect ratios', 'Style conditioning', 'Instant download'],
-  },
   {
     id: 'research',
     title: 'Research Agent',
@@ -79,19 +66,18 @@ export default function CreativeAI() {
           </div>
 
           <h2 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white leading-tight">
-            Synthesize visuals.
+            Synthesize intelligence.
             <br />
             <span className="gradient-text">Refactor code at scale.</span>
           </h2>
 
           <p className="mt-5 text-base sm:text-lg text-gray-400 max-w-2xl mx-auto">
-            Supercharge both creative expression and technical execution with high-throughput
-            generative diffusion and deep AST-aware compilers.
+            Supercharge technical execution with deep autonomous research and AST-aware compilers.
           </p>
         </div>
 
-        {/* 4-Card 3D Tilt Gallery */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* 3-Card 3D Tilt Gallery */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {CREATIVE_TOOLS.map((tool) => {
             const Icon = tool.icon;
             return (

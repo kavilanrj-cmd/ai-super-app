@@ -95,10 +95,11 @@ class VisionAgent(BaseAgent):
         )
 
 class PlanningAgent(BaseAgent):
-    def __init__(self):
+    def __init__(self, max_tokens: Optional[int] = 600):
         super().__init__(
             name="Planning Strategist",
             role="Task & Project Planning Specialist",
             goal="Break down complex projects into actionable tasks and create detailed plans",
-            backstory="Expert project manager with PMP certification and experience managing enterprise-scale projects."
+            backstory="Expert project manager with PMP certification and experience managing enterprise-scale projects.",
+            max_tokens=max_tokens
         )

@@ -11,6 +11,8 @@ import toast from 'react-hot-toast';
 import { PageHeader, EmptyState, Button, Input, CircularProgress, AnimatedNumber, SkeletonCard } from '@/components/ui';
 import { cn } from '@/lib/utils';
 
+import { Task } from '@/types';
+
 const priorityStyles: Record<string, string> = {
   low: 'bg-green-500/10 text-green-400 border-green-500/20',
   medium: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
@@ -19,7 +21,7 @@ const priorityStyles: Record<string, string> = {
 };
 
 export default function TasksPage() {
-  const [tasks, setTasks] = useState<any[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [title, setTitle] = useState('');
   const [goal, setGoal] = useState('');
   const [loading, setLoading] = useState(false);
@@ -31,44 +33,87 @@ export default function TasksPage() {
   const loadTasks = async () => {
     try {
       const res = await taskAPI.list();
-      setTasks(res.data);
-    } catch { toast.error('Failed to load tasks'); }
-    finally { setInitialLoading(false); }
+      const list: Task[] = Array.isArray(res.data) ? res.data : [];
+      setTasks(list);
+      return list;
+    } catch {
+      toast.error('Failed to load tasks');
+      return [];
+    } finally {
+      setInitialLoading(false);
+    }
   };
 
   const createTask = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim()) return;
+    const trimmed = title.trim();
+    if (!trimmed) return;
     try {
-      await taskAPI.create(title);
+      const res = await taskAPI.create(trimmed);
       setTitle('');
       toast.success('Task created');
-      loadTasks();
-    } catch { toast.error('Failed to create task'); }
+      if (res?.data && res.data.id) {
+        setTasks((prev) => [res.data, ...prev.filter((t) => t.id !== res.data.id)]);
+      }
+      await loadTasks();
+    } catch (err: any) {
+      const msg = err.response?.data?.detail || err.message || 'Failed to create task';
+      toast.error(typeof msg === 'string' ? msg : 'Failed to create task');
+    }
   };
 
-  const toggleStatus = async (task: any) => {
-    const newStatus = task.status === 'done' ? 'todo' : 'done';
+  const toggleStatus = async (task: Task) => {
+    const isCompleted = (task.status || '').toLowerCase() === 'done';
+    const newStatus = isCompleted ? 'todo' : 'done';
+    // Optimistic UI update so count & progress ring respond immediately
+    setTasks((prev) =>
+      prev.map((t) => (t.id === task.id ? { ...t, status: newStatus } : t))
+    );
     try {
       await taskAPI.updateStatus(task.id, newStatus);
-      loadTasks();
-    } catch { toast.error('Failed to update task'); }
+      await loadTasks();
+    } catch (err: any) {
+      // Revert on error
+      setTasks((prev) =>
+        prev.map((t) => (t.id === task.id ? { ...t, status: task.status } : t))
+      );
+      const msg = err.response?.data?.detail || err.message || 'Failed to update task';
+      toast.error(typeof msg === 'string' ? msg : 'Failed to update task');
+    }
   };
 
   const generateFromGoal = async () => {
-    if (!goal.trim()) return;
+    const trimmed = goal.trim();
+    if (!trimmed) return;
     setLoading(true);
     try {
-      await taskAPI.generateFromGoal(goal);
+      const res = await taskAPI.generateFromGoal(trimmed);
+      const generated: Task[] = Array.isArray(res.data) ? res.data : [];
+      if (generated.length === 0) {
+        toast.error('No tasks could be generated from that goal. Please try a different goal.');
+        return;
+      }
+      // Immediately merge generated tasks into state so they display on screen
+      setTasks((prev) => {
+        const existingIds = new Set(prev.map((t) => t.id));
+        const additions = generated.filter((t) => !existingIds.has(t.id));
+        return [...additions, ...prev];
+      });
       setGoal('');
       setShowGoalInput(false);
-      toast.success('Tasks generated!');
-      loadTasks();
-    } catch { toast.error('Failed to generate tasks'); }
-    finally { setLoading(false); }
+      toast.success(`Generated ${generated.length} task${generated.length > 1 ? 's' : ''}!`);
+      // Keep state fully synchronized with database
+      await loadTasks();
+    } catch (err: any) {
+      const msg = err.response?.data?.detail || err.message || 'Failed to generate tasks';
+      toast.error(typeof msg === 'string' ? msg : 'Failed to generate tasks');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const doneCount = tasks.filter((t) => t.status === 'done').length;
+  const isDone = (t: Task) => (t.status || '').toLowerCase() === 'done';
+  const doneCount = tasks.filter(isDone).length;
   const pendingCount = tasks.length - doneCount;
   const completion = tasks.length ? Math.round((doneCount / tasks.length) * 100) : 0;
 
@@ -218,32 +263,37 @@ export default function TasksPage() {
                     transition={{ delay: i * 0.03 }}
                     className={cn(
                       'glass-card !rounded-xl p-4 flex items-center gap-4 group hover:border-primary-500/25 transition-all',
-                      task.status === 'done' && 'opacity-60'
+                      isDone(task) && 'opacity-60'
                     )}
                   >
                     <button
                       onClick={() => toggleStatus(task)}
                       className="shrink-0 text-gray-500 hover:text-primary-400 transition-colors"
-                      aria-label={task.status === 'done' ? 'Mark as incomplete' : 'Mark as complete'}
+                      aria-label={isDone(task) ? 'Mark as incomplete' : 'Mark as complete'}
                     >
-                      {task.status === 'done' ? (
+                      {isDone(task) ? (
                         <CheckCircle2 className="w-7 h-7 text-emerald-400" />
                       ) : (
                         <Circle className="w-7 h-7 group-hover:text-primary-400" />
                       )}
                     </button>
                     <div className="flex-1 min-w-0">
-                      <p className={cn('text-[15px] text-gray-100 font-medium', task.status === 'done' && 'line-through text-gray-500')}>
+                      <p className={cn('text-[15px] text-gray-100 font-medium', isDone(task) && 'line-through text-gray-500')}>
                         {task.title}
                       </p>
+                      {task.description && (
+                        <p className="text-xs text-gray-400 mt-1 line-clamp-2">
+                          {task.description}
+                        </p>
+                      )}
                       {task.due_date && (
                         <p className="text-sm text-gray-500 mt-0.5 flex items-center gap-1">
                           <Clock className="w-3.5 h-3.5" /> Due: {task.due_date}
                         </p>
                       )}
                     </div>
-                    <span className={cn('px-3 py-1 text-sm rounded-full border shrink-0', priorityStyles[task.priority] || 'bg-white/5 text-gray-400 border-white/10')}>
-                      {task.priority}
+                    <span className={cn('px-3 py-1 text-sm rounded-full border shrink-0 capitalize', priorityStyles[(task.priority || 'medium').toLowerCase()] || 'bg-white/5 text-gray-400 border-white/10')}>
+                      {(task.priority || 'medium').toLowerCase()}
                     </span>
                   </motion.div>
                 ))}

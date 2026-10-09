@@ -8,7 +8,7 @@ import { useAuth } from '@/lib/hooks';
 import {
   LayoutDashboard, MessageSquare, FileText, Briefcase, CheckSquare,
   BarChart3, User, Settings, Shield, ChevronLeft, ChevronRight,
-  Sparkles, LogOut, Image, Mic, StickyNote, Mail,
+  Sparkles, LogOut, Mic, StickyNote, Mail,
   PenTool, BookOpen, Search, Code, Bug, FileEdit, GraduationCap,
   X, Command, NotebookPen, Target, FolderOpen, ChevronRight as ChevronRightSmall,
   Rocket
@@ -47,7 +47,6 @@ const navGroups = [
       { icon: FolderOpen, label: 'Documents', path: '/documents' },
       { icon: BookOpen, label: 'PDF Chat', path: '/pdf-chat' },
       { icon: Search, label: 'Research Agent', path: '/research' },
-      { icon: Image, label: 'Image AI', path: '/image-ai' },
       { icon: Mic, label: 'Voice AI', path: '/voice-ai' },
     ],
   },

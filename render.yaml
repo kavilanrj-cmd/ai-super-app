@@ -9,7 +9,7 @@ services:
   - type: web
     name: ai-super-app-backend
     runtime: python
-    rootDir: backend
+    rootDir: super-app/backend
     plan: starter
     buildCommand: pip install --upgrade pip && pip install -r requirements.txt
     startCommand: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT"

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   MessageSquare, FileText, FileEdit, GraduationCap, Briefcase,
-  Search, Code, Bug, FolderOpen, BookOpen, Image as ImageIcon,
+  Search, Code, Bug, FolderOpen, BookOpen,
   CheckSquare, ArrowUpRight, Sparkles, Terminal, Activity,
   Layers, Cpu, CheckCircle2, ChevronRight, Play
 } from 'lucide-react';
@@ -215,23 +215,6 @@ const MODULES: WorkspaceModule[] = [
       action: 'Cross-referencing applicant technical stack against 1,200+ active engineering openings',
       result: 'Matched 18 top tier roles with salary ranges from $180k to $240k.',
       metrics: 'Filtered 1,200+ roles · 18 Prime Matches',
-    },
-  },
-  {
-    id: 'image-ai',
-    name: 'Image AI',
-    category: 'Content',
-    description: 'Ultra-high-definition visual asset synthesis, prompt engineering, and design mockup.',
-    route: '/image-ai',
-    icon: ImageIcon,
-    accent: 'from-purple-500 to-indigo-600',
-    borderGlow: 'hover:border-purple-500/50 hover:shadow-purple-500/20',
-    badge: 'Visual Synthesis',
-    previewSnippet: {
-      title: 'Diffusion Engine & UI Mockups',
-      action: 'Generating photorealistic 3D glassmorphic dashboard illustrations and assets',
-      result: 'Synthesized 4K render with custom lighting gradients and volumetric refraction.',
-      metrics: 'Render Resolution: 4096x2160 · 60fps assets',
     },
   },
   {

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import {
   MessageSquare, FileSearch, FileText, Mic, Users, Briefcase, Code2, Bug,
-  FolderOpen, FileType2, FlaskConical, Image as ImageIcon, ListChecks, ArrowRight,
+  FolderOpen, FileType2, FlaskConical, ListChecks, ArrowRight,
   Rocket,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -36,7 +36,6 @@ const FEATURES: Feature[] = [
   { title: 'Documents', desc: 'Manage your files', icon: FolderOpen, route: '/documents', cat: 'Content', tone: 'green' },
   { title: 'PDF Chat', desc: 'Chat with your PDFs', icon: FileType2, route: '/pdf-chat', cat: 'AI Tools', tone: 'amber' },
   { title: 'Research Agent', desc: 'Deep research with AI', icon: FlaskConical, route: '/research', cat: 'AI Tools', tone: 'teal' },
-  { title: 'Image AI', desc: 'Generate stunning visuals', icon: ImageIcon, route: '/image-ai', cat: 'AI Tools', tone: 'pink' },
   { title: 'Manage Tasks', desc: 'Organize your workflow', icon: ListChecks, route: '/tasks', cat: 'Productivity', tone: 'green' },
   { title: 'AI App Builder', desc: 'Build apps from natural language', icon: Rocket, route: '/app-builder', cat: 'AI Tools', tone: 'violet', featured: true },
 ];

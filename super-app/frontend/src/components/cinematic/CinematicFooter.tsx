@@ -86,11 +86,6 @@ export default function CinematicFooter() {
                   Research Agent
                 </Link>
               </li>
-              <li>
-                <Link href="/image-ai" className="hover:text-white transition-colors">
-                  Image AI Studio
-                </Link>
-              </li>
             </ul>
           </div>
         </div>

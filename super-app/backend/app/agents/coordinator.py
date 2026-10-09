@@ -18,7 +18,7 @@ class AgentCoordinator:
             "summarizer": SummarizerAgent(),
             "document": DocumentAgent(),
             "vision": VisionAgent(),
-            "planning": PlanningAgent(),
+            "planning": PlanningAgent(max_tokens=600),
         }
 
     def get_agent(self, agent_type: str):
